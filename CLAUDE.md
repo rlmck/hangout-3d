@@ -83,8 +83,8 @@ on 127.0.0.1/localhost), so rebuild the `.glb` locally and commit it along with 
   reports a fine primary pointer and used to get the desktop pointer-lock overlay), then follows the last input:
   a finger switches to touch mode, a mouse back to desktop. `?touch` forces it on a desktop for testing.
 - Touch mode: twin sticks like a mobile
-  shooter (left walks, right looks, squared response). The look stick is **inverted on purpose** (owner's choice:
-  push right turns left, push up looks down); dragging the screen is not (finger right = look right).
+  shooter (left walks, right looks, squared response). The look stick is normal (push right turns right, push up
+  looks up); dragging the screen is **inverted on purpose** (owner's choice: drag the scene, finger right looks left).
   The problem card folds down (▴/▾) to the dropdown plus ◀ Move n ▶; the fold is remembered in localStorage,
   and on phones the card doesn't repeat the problem list (the dropdown has it).
   No wall info, no plan view. Tapping a hold opens its problem (camera goes there, beta from the start); tapping a
@@ -96,6 +96,11 @@ on 127.0.0.1/localhost), so rebuild the `.glb` locally and commit it along with 
 - Problems: `N` cycles problems (then none), `[` / `]` step through the moves, `G` stands you in front of the
   problem. The selected problem shows `S`/`TOP` and LH/RH/LF/RF markers (bigger = the limb that just moved);
   other problems dim. Hovering a hold shows its type, position and which moves use it.
+- The selected problem is acted out by a translucent climber: left/right hand outlines and left/right shoe outlines
+  (K for knees) on the holds, plus a stick body estimated from them (`bodyPoints`: torso between hands and feet,
+  pushed out along the holds' normals; a null foot hangs as a flag). Next/Prev animate each changed limb along an
+  arc off the wall with a fading dotted trail, feet first (hands first on `dynamic` moves). Test in a hidden tab
+  with `viewer.setStep(i)` then `viewer.animateClimber(0.05)` in a loop.
 - Hover info shows the wall id, notes, and a panel table (height range, angle, slab/vertical/overhang).
 - Collision: radial raycasts (radius 0.3 m) at heights 0.25, 0.9, 1.5 and 1.85 m. Anything hanging higher than
   ~1.9 m can be walked under, which is why the bridge (2.4 m) and the cave walk-under (2.1 m) work.
@@ -104,6 +109,7 @@ on 127.0.0.1/localhost), so rebuild the `.glb` locally and commit it along with 
   `move(dt)` directly).
 
 ## Working with the owner
+- **Commit and push straight to `main` after every change** so they can test on their phone (GitHub Pages).
 - They are at or near the gym and answer questions about walls by line number; ask rather than guess.
 - When something is assumed, put `UNCONFIRMED` in that wall's `notes` so it shows on hover.
 - After a change, rebuild and look at it in the viewer before reporting back.

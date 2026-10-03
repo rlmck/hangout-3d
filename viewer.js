@@ -278,10 +278,11 @@ function setStep(i) {
   const p = problems[sel];
   if (!p) return;
   step = THREE.MathUtils.clamp(i, 0, p.moves.length - 1);
-  applySelection();
+  climbTo(step);
+  updateProblemUI();
 }
 
-// Dim the other problems; mark start/finish holds and the limbs for the current move of the selected one.
+// Dim the other problems; mark start/finish holds and put the climber on the selected one's start.
 function applySelection() {
   problems.forEach((p, i) => p._group.traverse((o) => {
     if (!o.isMesh) return;
@@ -292,25 +293,217 @@ function applySelection() {
   markerGroup = new THREE.Group();
   scene.add(markerGroup);
   const p = problems[sel];
-  const mark = (h, text, colour, size, [dx, dy], opacity = 1) => {
-    const f = frames.get(h), [sw, sh, sd] = holdSize(h);
-    if (!f) return;
-    const s = textSprite(text, colour, size * (TOUCH ? 1.6 : 1), opacity);  // bigger labels on a small screen
-    s.position.copy(f.pos).addScaledVector(f.x, dx * Math.max(0.08, sw / 2)).addScaledVector(f.y, dy * Math.max(0.08, sh / 2))
-      .addScaledVector(f.z, (h.type === 'volume' ? sd * 0.5 : sd) + 0.05);
-    markerGroup.add(s);
-  };
-  if (p) {
-    for (const h of p.holds) if (h.role) mark(h, h.role === 'start' ? 'S' : 'TOP', p.colour, 0.07, [0, h.role === 'start' ? -1.4 : 1.4]);
-    const m = p.moves[step], prev = p.moves[step - 1];
-    for (const l of LIMBS) {
-      const h = m && p._holds.get(m[l]);
-      if (!h) continue;
-      const moved = !prev || prev[l] !== m[l];
-      mark(h, l, LIMB_COLOUR[l], moved ? 0.1 : 0.07, LIMB_DIR[l], moved ? 1 : 0.6);
-    }
+  for (const h of p?.holds || []) {
+    const f = frames.get(h);
+    if (!h.role || !f) continue;
+    const [, sh, sd] = holdSize(h), up = h.role === 'start' ? -1 : 1;
+    const t = textSprite(h.role === 'start' ? 'S' : 'TOP', p.colour, 0.07 * (TOUCH ? 1.6 : 1));
+    t.position.copy(f.pos).addScaledVector(f.y, up * (Math.max(0.08, sh / 2) + 0.06)).addScaledVector(f.z, sd + 0.05);
+    markerGroup.add(t);
   }
+  buildClimber(p);
   updateProblemUI();
+}
+
+// ---------- the climber: hand and shoe outlines plus a ghost body that act out each move ----------
+const V3 = THREE.Vector3, UP = new V3(0, 1, 0), DOWN = new V3(0, -1, 0);
+const MOVE_TIME = 0.8, STAGGER = 0.45, TRAIL_TIME = 2.4;  // seconds
+const ICON_SIZE = { H: 0.2, F: 0.17, K: 0.12 };
+let climber = null;
+
+function iconTexture(limb, colour) {  // outline drawing; right hand/shoe = mirrored left
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  g.scale(2, 2); g.lineJoin = g.lineCap = 'round';
+  if (limb[0] === 'R') { g.translate(64, 0); g.scale(-1, 1); }
+  const P = (f) => { const p = new Path2D(); f(p); return p; };
+  let paths;
+  if (limb[1] === 'H') paths = [  // back of a left hand on the wall: fingers up, thumb toward the body (right)
+    P((p) => p.roundRect(17, 28, 28, 28, 9)),
+    ...[[20.5, 14, 6.5], [27.5, 8, 7.5], [35, 5, 7.5], [42, 9, 7]].map(([x, y, w]) => P((p) => p.roundRect(x - w / 2, y, w, 36 - y, w / 2))),
+    P((p) => p.ellipse(50, 39, 4.3, 11, 0.65, 0, Math.PI * 2)),
+  ];
+  else if (limb[1] === 'F') paths = [P((p) => {  // left climbing shoe from above: toe up, big toe on the inside (right)
+    p.moveTo(30, 61); p.bezierCurveTo(19, 61, 16, 52, 17, 43); p.bezierCurveTo(18, 33, 13, 22, 17, 13);
+    p.bezierCurveTo(21, 4, 36, 0, 44, 6); p.bezierCurveTo(51, 12, 50, 24, 47, 34); p.bezierCurveTo(44, 44, 44, 61, 30, 61); p.closePath();
+  })];
+  else paths = [P((p) => p.arc(32, 32, 14, 0, Math.PI * 2))];  // knee
+  // dark halo, coloured outline, then a white fill that hides the seams between the pieces
+  g.strokeStyle = 'rgba(12,12,16,0.85)'; g.lineWidth = 8; paths.forEach((q) => g.stroke(q));
+  g.strokeStyle = colour; g.lineWidth = 5; paths.forEach((q) => g.stroke(q));
+  g.fillStyle = 'rgba(255,255,255,0.92)'; paths.forEach((q) => g.fill(q));
+  if (limb[1] === 'F') {  // two velcro straps
+    g.strokeStyle = colour; g.lineWidth = 2.5; g.beginPath();
+    g.moveTo(19, 33); g.lineTo(46, 30); g.moveTo(18, 42); g.lineTo(44, 40); g.stroke();
+  }
+  if (limb[1] === 'K') {
+    g.setTransform(2, 0, 0, 2, 0, 0); g.fillStyle = colour; g.font = '800 15px system-ui, sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('K', 32, 33);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function dotTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 32;
+  const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(16, 16, 13, 0, Math.PI * 2); g.fill();
+  const tex = new THREE.CanvasTexture(c);
+  return tex;
+}
+
+// Where a limb goes on a hold: just off its surface, nudged so two limbs on one hold sit side by side.
+function limbTarget(p, m, l) {
+  const h = m && m[l] && p._holds.get(m[l]), f = h && frames.get(h);
+  if (!f) return null;
+  const [sw, sh, sd] = holdSize(h), [dx, dy] = LIMB_DIR[l];
+  return {
+    pos: f.pos.clone().addScaledVector(f.x, dx * Math.min(0.07, sw / 2 + 0.02)).addScaledVector(f.y, dy * Math.min(0.05, sh / 2))
+      .addScaledVector(f.z, (h.type === 'volume' ? sd * 0.6 : sd) + 0.03),
+    n: f.z.clone(), x: f.x.clone(),
+  };
+}
+const copyLimb = (q) => q && { pos: q.pos.clone(), n: q.n.clone(), x: q.x.clone() };
+
+// A rough body from where the hands and feet are: torso between them, pushed out from the wall,
+// elbows and knees bent outward, a flagging leg hanging from the hip.
+function bodyPoints(cur) {
+  const have = (ls) => ls.map((l) => cur[l]).filter(Boolean), all = have(LIMBS);
+  if (!all.length) return null;
+  const avg = (a) => a.reduce((t, q) => t.add(q.pos), new V3()).divideScalar(a.length);
+  const n = all.reduce((t, q) => t.add(q.n), new V3()).normalize();
+  const x = all.reduce((t, q) => t.add(q.x), new V3());
+  x.addScaledVector(n, -x.dot(n)).normalize();
+  const hands = have(['LH', 'RH']), feet = have(['LF', 'RF']);
+  const H = hands.length ? avg(hands) : null, F = feet.length ? avg(feet) : null;
+  let centre, dir;
+  if (H && F) {
+    centre = H.clone().lerp(F, 0.45).addScaledVector(n, 0.3);
+    dir = H.clone().sub(F);
+    if (dir.length() < 0.2) dir.copy(UP);
+  } else if (H) { centre = H.clone().addScaledVector(DOWN, 0.75).addScaledVector(n, 0.25); dir = UP.clone(); }
+  else { centre = F.clone().addScaledVector(UP, 1.0).addScaledVector(n, 0.3); dir = UP.clone(); }
+  dir.normalize();
+  const pt = { neck: centre.clone().addScaledVector(dir, 0.26), pelvis: centre.clone().addScaledVector(dir, -0.24) };
+  pt.head = pt.neck.clone().addScaledVector(dir, 0.2).addScaledVector(n, 0.03);
+  for (const [side, sgn] of [['l', -1], ['r', 1]]) {
+    const L = side.toUpperCase();
+    pt[side + 'sh'] = pt.neck.clone().addScaledVector(x, sgn * 0.18);
+    pt[side + 'hip'] = pt.pelvis.clone().addScaledVector(x, sgn * 0.11);
+    pt[L + 'H'] = cur[L + 'H']?.pos.clone() ?? pt[side + 'sh'].clone().addScaledVector(DOWN, 0.55).addScaledVector(x, sgn * 0.12);
+    pt[L + 'F'] = cur[L + 'F']?.pos.clone() ?? pt[side + 'hip'].clone().addScaledVector(DOWN, 0.75).addScaledVector(x, sgn * 0.3);
+    pt[side + 'el'] = pt[side + 'sh'].clone().lerp(pt[L + 'H'], 0.5).addScaledVector(n, 0.1).addScaledVector(x, sgn * 0.07);
+    pt[side + 'kn'] = cur[L + 'K']?.pos.clone() ?? pt[side + 'hip'].clone().lerp(pt[L + 'F'], 0.5).addScaledVector(n, 0.16).addScaledVector(x, sgn * 0.09);
+  }
+  return pt;
+}
+const BONES = [['lsh', 'rsh', 0.035], ['lhip', 'rhip', 0.035], ['neck', 'pelvis', 0.07],
+  ['lsh', 'lel', 0.032], ['lel', 'LH', 0.028], ['rsh', 'rel', 0.032], ['rel', 'RH', 0.028],
+  ['lhip', 'lkn', 0.042], ['lkn', 'LF', 0.034], ['rhip', 'rkn', 0.042], ['rkn', 'RF', 0.034]];
+
+function buildClimber(p) {
+  if (climber) { scene.remove(climber.group); dispose(climber.group); climber = null; }
+  if (!p) return;
+  const group = new THREE.Group();
+  const skin = new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.85, transparent: true, opacity: 0.5, depthWrite: false });
+  const bones = BONES.map(() => { const m = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 10), skin); group.add(m); return m; });
+  const joints = ['lel', 'rel', 'lkn', 'rkn', 'lsh', 'rsh', 'lhip', 'rhip'].map((k) => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), skin); group.add(m); return [k, m];
+  });
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.1, 20, 14), skin);
+  group.add(head);
+  const icons = {};
+  for (const l of LIMBS) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: iconTexture(l, LIMB_COLOUR[l]), transparent: true, depthWrite: false, toneMapped: false }));
+    sp.renderOrder = 6;
+    group.add(sp);
+    icons[l] = sp;
+  }
+  climber = { p, group, bones, joints, head, icons, dot: dotTexture(), cur: {}, anims: [], trails: [], t: 0, moved: new Set(), pts: null };
+  for (const l of LIMBS) climber.cur[l] = limbTarget(p, p.moves[step], l);
+  climber.moved = new Set(LIMBS);
+  scene.add(group);
+  drawClimber();
+}
+
+// Next/Prev: each limb that changes travels from where it is now to its new hold along a small arc off the wall,
+// one after another (feet first, or hands first on a dynamic move), leaving a fading dotted trail.
+function climbTo(i) {
+  const c = climber;
+  if (!c) return;
+  const m = c.p.moves[i], hand = (l) => (l[1] === 'H' ? 1 : 0), order = m.dynamic ? -1 : 1;
+  for (const a of c.anims) if (!a.done) c.cur[a.l] = a.live ?? c.cur[a.l];  // carry on from mid-flight positions
+  for (const tr of c.trails.filter((q) => q.start > c.t)) { c.group.remove(tr.obj); dispose(tr.obj); }  // cancelled moves
+  c.trails = c.trails.filter((q) => q.start <= c.t);
+  const changes = LIMBS.map((l) => ({ l, to: limbTarget(c.p, m, l) }))
+    .filter(({ l, to }) => !(to === null && !c.cur[l]) && !(to && c.cur[l] && to.pos.distanceTo(c.cur[l].pos) < 1e-3))
+    .sort((a, b) => (hand(a.l) - hand(b.l)) * order);
+  const pts = c.pts || bodyPoints(c.cur);
+  c.anims = changes.map(({ l, to }, k) => {
+    const hang = { pos: (pts?.[l] ?? to?.pos ?? new V3()).clone(), n: (to || c.cur[l]).n.clone(), x: (to || c.cur[l]).x.clone() };
+    const from = c.cur[l] ? copyLimb(c.cur[l]) : hang, dest = to || hang;
+    const fast = m.dynamic && hand(l);
+    const dur = fast ? 0.5 : MOVE_TIME, start = c.t + k * STAGGER * (m.dynamic ? 0.6 : 1);
+    const lift = l[1] === 'K' ? 0.05 : Math.min(0.25, 0.08 + from.pos.distanceTo(dest.pos) * 0.12);
+    const arcN = from.n.clone().add(dest.n).normalize();
+    const curve = (e) => from.pos.clone().lerp(dest.pos, e).addScaledVector(arcN, Math.sin(Math.PI * e) * lift);
+    const trail = new THREE.Points(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 16 }, (_, j) => curve(j / 15))),
+      new THREE.PointsMaterial({ map: c.dot, color: LIMB_COLOUR[l], size: TOUCH ? 9 : 7, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false }));
+    c.group.add(trail);
+    c.trails.push({ obj: trail, start, end: start + dur });
+    return { l, from, dest, to, curve, start, dur, done: false, live: null };
+  });
+  c.moved = new Set(changes.map((q) => q.l));
+}
+
+const ease = (u) => (u < 0.5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2);
+function animateClimber(dt) {
+  const c = climber;
+  if (!c) return;
+  c.t += dt;
+  for (const a of c.anims) {
+    if (a.done || c.t < a.start) continue;
+    const u = Math.min(1, (c.t - a.start) / a.dur), e = ease(u);
+    a.live = { pos: a.curve(e), n: a.from.n.clone().lerp(a.dest.n, e).normalize(), x: a.from.x.clone().lerp(a.dest.x, e).normalize() };
+    c.cur[a.l] = a.live;
+    if (u >= 1) { a.done = true; c.cur[a.l] = copyLimb(a.to); }
+  }
+  for (const tr of c.trails) {  // fade in while the limb travels, then fade away
+    const o = c.t < tr.start ? 0 : c.t < tr.end ? 0.9 * (c.t - tr.start) / (tr.end - tr.start) : 0.9 * (1 - (c.t - tr.end) / TRAIL_TIME);
+    tr.obj.material.opacity = Math.max(0, o);
+  }
+  for (const tr of c.trails.filter((q) => c.t > q.end + TRAIL_TIME)) { c.group.remove(tr.obj); dispose(tr.obj); }
+  c.trails = c.trails.filter((q) => c.t <= q.end + TRAIL_TIME);
+  drawClimber();
+}
+
+function drawClimber() {
+  const c = climber, pt = bodyPoints(c.cur);
+  c.pts = pt;
+  c.group.visible = !!pt;
+  if (!pt) return;
+  BONES.forEach(([a, b, r], k) => {
+    const mesh = c.bones[k], d = pt[b].clone().sub(pt[a]), len = d.length();
+    mesh.position.copy(pt[a]).addScaledVector(d, 0.5);
+    mesh.scale.set(r, Math.max(len, 1e-3), r);
+    if (len > 1e-6) mesh.quaternion.setFromUnitVectors(UP, d.divideScalar(len));
+  });
+  for (const [k, m] of c.joints) { m.position.copy(pt[k]); m.scale.setScalar(k.endsWith('kn') ? 0.045 : 0.036); }
+  c.head.position.copy(pt.head);
+  const k = TOUCH ? 1.35 : 1;
+  for (const l of LIMBS) {
+    const sp = c.icons[l], q = c.cur[l], moving = c.anims.some((a) => a.l === l && !a.done && c.t >= a.start);
+    sp.visible = !!q;
+    if (!q) continue;
+    const a = c.anims.find((x) => x.l === l), u = a && !a.done && c.t >= a.start ? (c.t - a.start) / a.dur : 0;
+    const big = c.moved.has(l);
+    sp.position.copy(q.pos);
+    sp.scale.setScalar(ICON_SIZE[l[1]] * k * (big ? 1 : 0.8) * (moving ? 1 + 0.18 * Math.sin(Math.PI * u) : 1));
+    sp.material.opacity = big ? 1 : 0.6;
+  }
 }
 
 let listOpen = !TOUCH;  // "Rules and all moves": open by default on desktop, collapsed on phones
@@ -647,8 +840,8 @@ stick($('joy'), joy);
 stick($('aim'), aim);
 function turn(dt) {  // look stick: squared response so small tilts aim finely
   const k = STICK_TURN * dt, c = (v) => Math.sign(v) * v * v;
-  player.yaw += c(aim.x) * k;  // inverted on purpose (owner's preference): push right turns left, push up looks down
-  player.pitch = THREE.MathUtils.clamp(player.pitch + c(aim.y) * k * 0.7, -1.5, 1.5);
+  player.yaw -= c(aim.x) * k;  // push right turns right, push up looks up
+  player.pitch = THREE.MathUtils.clamp(player.pitch - c(aim.y) * k * 0.7, -1.5, 1.5);
 }
 
 let drag = null;
@@ -658,8 +851,9 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
 });
 addEventListener('pointermove', (e) => {
   if (!drag || e.pointerId !== drag.id) return;
-  player.yaw -= (e.clientX - drag.x) * TOUCH_LOOK;  // finger right looks right, finger up looks up
-  player.pitch = THREE.MathUtils.clamp(player.pitch - (e.clientY - drag.y) * TOUCH_LOOK, -1.5, 1.5);
+  // inverted on purpose (owner's choice): drag the scene, so finger right looks left and finger up looks down
+  player.yaw += (e.clientX - drag.x) * TOUCH_LOOK;
+  player.pitch = THREE.MathUtils.clamp(player.pitch + (e.clientY - drag.y) * TOUCH_LOOK, -1.5, 1.5);
   drag.x = e.clientX; drag.y = e.clientY;
 });
 for (const t of ['pointerup', 'pointercancel']) addEventListener(t, (e) => {
@@ -713,6 +907,7 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.05);
   if (!layout) return;
   if (TOUCH) turn(dt);
+  animateClimber(dt);
   if (locked || planMode || TOUCH) move(dt);
   camera.position.copy(player.pos);
   camera.rotation.set(player.pitch, player.yaw, 0);
@@ -741,4 +936,4 @@ try {
   toast(location.protocol === 'file:' ? 'Open this through the server: python serve.py' : 'Failed to load model: ' + err.message, true, 0);
 }
 window.viewer = { player, scene, camera, keys, move, collides, pickFirstPerson, setPlanMode, spawn, info: () => info,
-  problems: () => problems, selectProblem, setStep, goToProblem, joy, aim, turn };  // handy from the devtools console
+  problems: () => problems, selectProblem, setStep, goToProblem, joy, aim, turn, animateClimber, climber: () => climber };  // handy from the devtools console
