@@ -11,7 +11,10 @@ const world = (x, y, h = 0) => new THREE.Vector3(x, h, -y);
 const $ = (id) => document.getElementById(id);
 // Phones and tablets: twin sticks like a mobile shooter (left walks, right looks), drag also looks,
 // tapping a hold opens its problem (?touch forces this on a desktop for testing)
-const TOUCH = matchMedia('(pointer: coarse)').matches || new URLSearchParams(location.search).has('touch');
+// Start in touch mode on anything with a touchscreen (an iPad with a trackpad reports a "fine" primary pointer);
+// after that the last kind of input wins: a finger switches to touch mode, a mouse back to desktop mode.
+const FORCE_TOUCH = new URLSearchParams(location.search).has('touch');
+let TOUCH = FORCE_TOUCH || matchMedia('(any-pointer: coarse)').matches || navigator.maxTouchPoints > 1;
 const TOUCH_LOOK = 0.005, STICK_TURN = 2.4;  // drag: radians per pixel; look stick: radians per second at full tilt
 document.body.classList.toggle('touch', TOUCH);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -545,10 +548,25 @@ function infoHTML(t) {
 
 // ---------- input ----------
 function requestLock() {
+  if (TOUCH) return;
   const p = renderer.domElement.requestPointerLock();
   p?.catch?.(() => {});  // Chrome refuses for ~1 s after Esc; the overlay stays up and a click retries
 }
 $('overlay').addEventListener('click', requestLock);
+function setTouch(on) {
+  if (on === TOUCH || (FORCE_TOUCH && !on)) return;
+  TOUCH = on;
+  document.body.classList.toggle('touch', on);
+  if (on && document.pointerLockElement) document.exitPointerLock();
+  keys.clear(); joy.x = joy.y = aim.x = aim.y = 0;
+  listOpen = !on;
+  pinned = hovered = null;
+  updateOverlayUI(); updateLockUI();
+  if (layout) applySelection();  // label sizes and the problem card differ between modes
+  if (on) toast('Left stick walks · right stick looks · tap a hold to open its problem', false, 5000);
+}
+// capture phase: switch before the overlay's click handler would ask for pointer lock
+addEventListener('pointerdown', (e) => setTouch(e.pointerType !== 'mouse'), true);
 document.addEventListener('pointerlockchange', () => {
   locked = document.pointerLockElement === renderer.domElement;
   updateLockUI();
