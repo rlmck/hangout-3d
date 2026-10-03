@@ -101,12 +101,16 @@ on 127.0.0.1/localhost), so rebuild the `.glb` locally and commit it along with 
   problem. The selected problem shows `S`/`TOP` and LH/RH/LF/RF markers (bigger = the limb that just moved);
   other problems dim. Hovering a hold shows its type, position and which moves use it.
 - The selected problem is acted out by a mannequin (`climber.js`, see its header comment). Hands lie flat on the hold
-  with fingers along the hold's `facing` (wrist on the other side); shoes are placed by the move's per-limb `style`
-  (edge / smear / drop-knee / heel / toe-hook / toe-press; a null foot flags, both null hang). The torso is solved each
-  frame so limbs reach (1.75 m proportions), kept 0.25-0.36 m off the wall, hips turned for drop-knees and laybacks;
-  elbows/knees use two-bone IK with grip-dependent poles. Next/Prev animate changed limbs along arcs with fading
-  trails, feet first (hands first on `dynamic` moves). Test in a hidden tab: `viewer.setStep(i)` then
-  `viewer.animateClimber(0.05)` in a loop.
+  with fingers along the hold's `facing`; shoes are placed by the move's per-limb `style` (edge / smear / drop-knee /
+  heel / toe-hook / toe-press; a null foot flags, both null hang). The torso (pelvis + spine direction) minimises a
+  smooth energy each frame: arm and leg reach, hips/chest distance off the wall, hips over the weighted foot (after a
+  rockover/high-step the foot that moved takes the weight), spine leaning from feet to hands. Elbows and knees use
+  soft two-bone IK that never bends into the wall. Anti-jitter: a temporal anchor plus speed caps on the torso, the
+  bend direction and the elbows/knees (all per second, so 30 fps phones match 60 fps).
+- **Check the climber after changing it:** in the browser console, `const a = await import('./climber_audit.js')`,
+  then `a.jitter()` (should report 0 flagged), `a.posture()` (reach and wall distances per move), and
+  `a.show(problemIndex, move, [x, eye, y], [x, h, y])` to frame a pose for a screenshot. A hidden tab runs no frames,
+  so these drive `viewer.animateClimber` themselves.
 - Hover info shows the wall id, notes, and a panel table (height range, angle, slab/vertical/overhang).
 - Collision: radial raycasts (radius 0.3 m) at heights 0.25, 0.9, 1.5 and 1.85 m. Anything hanging higher than
   ~1.9 m can be walked under, which is why the bridge (2.4 m) and the cave walk-under (2.1 m) work.

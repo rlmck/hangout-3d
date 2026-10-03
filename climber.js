@@ -15,6 +15,9 @@ const V3 = THREE.Vector3, UP = new V3(0, 1, 0), DOWN = new V3(0, -1, 0);
 const B = { upper: 0.29, fore: 0.27, thigh: 0.44, shin: 0.43, shoulder: 0.19, hip: 0.095, spine: 0.47, foot: 0.25 };
 const ARM = B.upper + B.fore, LEG = B.thigh + B.shin;
 const MOVE_TIME = 0.8, STAGGER = 0.45, TRAIL_TIME = 2.4;  // seconds
+// speed limits, per second (scaled by the frame time so phones at 30 fps look the same as 60 fps)
+const BODY_SPEED = 1.3, MID_SLACK = 1.8, TURN_SPEED = 7;  // m/s torso, m/s extra for elbows/knees, rad/s bend turn
+let frameDt = 1 / 60;
 const LIMBS = ['LH', 'RH', 'LF', 'RF', 'LK', 'RK'];
 const OFFSET = { LH: [-1, 0], RH: [1, 0], LF: [-1, 0], RF: [1, 0], LK: [0, 0], RK: [0, 0] };  // two limbs on one hold sit side by side
 const side = (l) => (l[0] === 'L' ? -1 : 1);
@@ -23,12 +26,35 @@ const unit = (v, fallback = UP) => (v.lengthSq() > 1e-8 ? v.normalize() : v.copy
 const perp = (v, n) => v.clone().addScaledVector(n, -v.dot(n));  // v with its n component removed
 const avg = (vs) => vs.reduce((t, v) => t.add(v), new V3()).divideScalar(Math.max(1, vs.length));
 
-// Two-bone IK: the middle joint (elbow/knee) for a limb from root to end, bending toward the pole.
-function ik(root, end, l1, l2, pole) {
-  const v = end.clone().sub(root), len = v.length(), dir = v.clone().divideScalar(len || 1);
-  const d = Math.min(Math.max(len, 1e-3), l1 + l2 - 1e-3);
-  const a = (l1 * l1 - l2 * l2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
-  const pd = unit(perp(pole, dir), new V3(0, 0, 1));
+// Two-bone IK: the middle joint (elbow/knee) for a limb from root to end, bending toward the pole. The bend direction
+// turns from last frame's toward the pole at most TURN_SPEED radians a second, so an elbow or knee can never snap
+// through the limb when the pole lines up with it.
+function ik(root, end, l1, l2, pole, memo, key, away, minAway = 0) {
+  const v = end.clone().sub(root), len = Math.max(v.length(), 1e-3), dir = v.clone().divideScalar(len);
+  // soft IK: over the last 8% of reach the limb straightens gradually and the bones stretch slightly to keep the
+  // hand/foot attached, so the elbow/knee never whips straight in one frame
+  const L = l1 + l2, soft = 0.08 * L;
+  const eff = len < L - soft ? len : L - soft + soft * (1 - Math.exp(-(len - (L - soft)) / soft));
+  const k = len / eff, s1 = l1 * k, s2 = l2 * k;
+  const a = (s1 * s1 - s2 * s2 + len * len) / (2 * len), h = Math.sqrt(Math.max(0, s1 * s1 - a * a));
+  const want = perp(pole, dir);
+  if (away) {  // never bend into the wall: keep at least minAway of the bend pointing out of it
+    unit(want, perp(away, dir));
+    const a = want.dot(away);
+    if (a < minAway) unit(want.addScaledVector(perp(away, dir), minAway - a), want);
+  }
+  const prev = memo[key] ? perp(memo[key], dir) : null;
+  let pd;
+  if (!prev || prev.lengthSq() < 1e-6) pd = unit(want, perp(new V3(0, 0, 1), dir));
+  else if (want.lengthSq() < 1e-6) pd = prev.normalize();
+  else {
+    prev.normalize(); want.normalize();
+    const ang = Math.acos(THREE.MathUtils.clamp(prev.dot(want), -1, 1));
+    const maxTurn = TURN_SPEED * frameDt;
+    if (ang <= maxTurn) pd = want;
+    else pd = prev.applyAxisAngle(unit(prev.clone().cross(want), dir), maxTurn);  // opposite: turn about the limb
+  }
+  memo[key] = pd.clone();
   return root.clone().addScaledVector(dir, a).addScaledVector(pd, h);
 }
 
@@ -66,6 +92,8 @@ export class Climber {
     Object.assign(this, { p: problem, frame, size, colours, scale, dotSize });
     this.t = 0; this.anims = []; this.trails = []; this.moved = new Set(LIMBS);
     this.group = new THREE.Group();
+    this.memo = {};  // last bend direction per elbow/knee
+    this.last = {};  // last frame's shoulder/elbow/hand and hip/knee/foot
     this.dot = dotTexture();
     this._buildMeshes();
     this.twist = this.twistTarget = 0;
@@ -73,7 +101,8 @@ export class Climber {
     this.twist = this.twistTarget;
     this.r = this.rTarget.clone();
     this.body = null;
-    for (let k = 0; k < 4; k++) this._solve(40);  // settle the start position
+    this._solve(300);  // settle the start position
+    this.settled = true;
     this._draw();
   }
 
@@ -113,13 +142,24 @@ export class Climber {
       tw += H.sub(F).dot(this.r) < 0 ? 0.5 : -0.5;
     }
     this.twistTarget = tw;
+    // weight: after a rockover/high-step the foot that moved takes the weight (hips over it, that leg bent, the
+    // other leg trailing) until either foot moves again; otherwise both feet share it
+    this.weight = {};
+    for (let j = i; j > 0; j--) {
+      const mj = this.p.moves[j], pj = this.p.moves[j - 1], moved = ['LF', 'RF'].filter((l) => mj[l] !== pj[l]);
+      if (!moved.length) continue;
+      const w = moved[0], o = w === 'LF' ? 'RF' : 'LF';
+      if (moved.length === 1 && mj[w] && (mj.technique || []).some((t) => /rockover|high-step|high feet/.test(t))
+        && m[w] === mj[w] && m[o] === mj[o]) { this.weight[w] = 1.6; this.weight[o] = 0.4; }
+      break;
+    }
     return poses;
   }
 
   _pose(l, m, style) {
     const h = m[l] && this.p._holds.get(m[l]), f = h && this.frame(h);
     if (!f) return null;
-    const [sw, , sd] = this.size(h), n = f.z.clone();
+    const [sw, sh, sd] = this.size(h), n = f.z.clone();
     const out = this.rTarget.clone().multiplyScalar(side(l));  // away from the body's midline
     const C = f.pos.clone().addScaledVector(f.x, OFFSET[l][0] * Math.min(0.06, sw / 2 + 0.02))
       .addScaledVector(n, h.type === 'volume' ? sd * 0.55 : h.type === 'arete' || h.type === 'spot' ? 0.01 : sd * 0.7 + 0.01);
@@ -157,7 +197,10 @@ export class Climber {
       const turn = mode === 'drop-knee' ? -0.75 : mode === 'smear' ? 0.15 : 0.5;
       d = unit(level.clone().addScaledVector(out, turn));
       s = unit(perp(UP.clone(), d), n);
-      toe = C.clone().addScaledVector(d, 0.03);
+      // the toe stands on top of a foothold, against the wall; on a volume or arete it sits where C is
+      toe = h.type === 'foot' || h.type === 'crimp' || h.type === 'jug' || h.type === 'pinch' || h.type === 'sloper' || h.type === 'pocket'
+        ? f.pos.clone().addScaledVector(f.x, OFFSET[l][0] * Math.min(0.03, sw / 4)).addScaledVector(UP, sh * 0.5).addScaledVector(n, Math.min(sd, 0.05) * 0.5)
+        : C.clone();
       heel = toe.clone().addScaledVector(d, -B.foot).addScaledVector(DOWN, mode === 'smear' ? 0.07 : 0.015);
     }
     const E = mode === 'heel' ? heel.clone().addScaledVector(d, 0.05).addScaledVector(s, 0.07)
@@ -186,8 +229,9 @@ export class Climber {
     const same = (a, b) => (!a && !b) || (a && b && a.E.distanceTo(b.E) < 1e-3 && a.mode === b.mode);
     const changes = LIMBS.filter((l) => !same(this.cur[l], next[l])).sort((a, b) => (hand(a) - hand(b)) * order);
     this.anims = changes.map((l, k) => {
-      const from = this.cur[l] || (l[1] === 'F' && prevBody ? this._flag(l, prevBody) : next[l]);
-      const to = next[l] || (l[1] === 'F' && prevBody ? this._flag(l, prevBody) : from);
+      const knee = (q) => l[1] === 'K' && this.last[l[0] + 'F'] && q && { ...q, C: this.last[l[0] + 'F'].mid.clone(), E: this.last[l[0] + 'F'].mid.clone() };
+      const from = this.cur[l] || knee(next[l]) || (l[1] === 'F' && prevBody ? this._flag(l, prevBody) : next[l]);
+      const to = next[l] || knee(this.cur[l]) || (l[1] === 'F' && prevBody ? this._flag(l, prevBody) : from);
       const fast = m.dynamic && hand(l), dur = fast ? 0.5 : MOVE_TIME;
       const start = this.t + k * STAGGER * (m.dynamic ? 0.6 : 1);
       const lift = l[1] === 'K' ? 0.04 : Math.min(0.25, 0.08 + from.E.distanceTo(to.E) * 0.12);
@@ -211,6 +255,7 @@ export class Climber {
 
   update(dt) {
     this.t += dt;
+    frameDt = Math.min(Math.max(dt, 1 / 240), 0.1);
     for (const a of this.anims) {
       if (a.done || this.t < a.start) continue;
       const u = Math.min(1, (this.t - a.start) / a.dur), e = ease(u);
@@ -227,69 +272,128 @@ export class Climber {
     const k = Math.min(1, dt * 4);
     this.twist += (this.twistTarget - this.twist) * k;
     this.r = unit(this.r.lerp(this.rTarget, k), this.rTarget);
-    this._solve(12);
+    this._solve(25);
     this._draw();
   }
 
   // ---- body ----
-  _solve(iterations) {
+  // The torso (pelvis P and spine direction u, chest S = P + u * spine) minimises a smooth energy, so it moves
+  // continuously with the hands and feet (no jitter) and settles instead of oscillating:
+  //   arms: bend freely, gently prefer near-straight (climbers hang on straight arms), must not over-reach;
+  //   legs: prefer bent (~0.62 m hip to ankle), must not over-reach or fold flat; a kneebar pins the thigh length;
+  //   hips and chest: a set distance off the wall (close on steep ground, further out on a slab, below a roof);
+  //   balance: hips over the feet side to side (between feet and hands on steep ground);
+  //   posture: spine leans from the feet toward the hands, upright unless under a roof.
+  _setup() {
     const cur = this.cur, have = LIMBS.filter((l) => cur[l]);
-    if (!have.length) { this.body = null; return; }
+    if (!have.length) return null;
     const n = unit(avg(have.map((l) => cur[l].n.clone())), new V3(0, 0, 1));
-    const O = avg(have.map((l) => cur[l].C.clone()));  // a point on the wall near the climber
-    const off = (X) => X.clone().sub(O).dot(n);
+    const roof = n.y < -0.75, slab = n.y > 0.12, steep = n.y < -0.25;
     const hands = ['LH', 'RH'].filter((l) => cur[l]), feet = ['LF', 'RF'].filter((l) => cur[l]), knees = ['LK', 'RK'].filter((l) => cur[l]);
-    const roof = n.y < -0.75, slab = n.y > 0.15;
-    const chestOff = roof ? 0.3 : 0.27, hipOff = roof ? 0.3 : slab ? 0.36 : 0.25;
-    let S, P;
-    if (this.body) { S = this.body.S.clone(); P = this.body.P.clone(); }
-    else {
-      const H = hands.length ? avg(hands.map((l) => cur[l].E.clone())) : null, F = feet.length ? avg(feet.map((l) => cur[l].E.clone())) : null;
-      S = H && F ? H.clone().lerp(F, 0.35) : H ? H.clone().addScaledVector(DOWN, 0.45) : F.clone().addScaledVector(UP, 1.1);
-      S.addScaledVector(n, chestOff);
-      P = F && H ? F.clone().lerp(H, 0.35).addScaledVector(n, hipOff) : S.clone().addScaledVector(DOWN, B.spine);
-    }
-    const r0 = this.r.clone();
-    let u = new V3(), r = new V3();
-    const frame = () => {
-      u = unit(S.clone().sub(P));
-      r = unit(perp(r0, u), new V3(1, 0, 0)).applyAxisAngle(u, this.twist);
+    const H = hands.length ? avg(hands.map((l) => cur[l].E.clone())) : null;
+    const F = feet.length ? avg(feet.map((l) => cur[l].E.clone())) : null;
+    const hf = H && F ? unit(H.clone().sub(F)) : null;
+    const want = roof ? (hf ? hf.clone() : UP.clone()) : UP.clone().addScaledVector(hf || UP, 0.8);
+    unit(want);
+    const heavy = feet.find((l) => (this.weight?.[l] || 1) > 1);
+    const base = heavy ? cur[heavy].E.clone()  // where the weight goes
+      : F && H ? F.clone().lerp(H, steep || roof ? 0.45 : 0.2) : (F || H).clone();
+    return {
+      n, roof, slab, steep, hands, feet, knees, H, F, want, base,
+      O: avg(have.map((l) => cur[l].C.clone())),  // a point on the wall near the climber
+      hipOff: roof ? 0.42 : slab ? 0.32 : steep ? 0.24 : 0.22, chestOff: roof ? 0.4 : slab ? 0.3 : 0.26,
+      balance: steep || roof ? 1 : heavy ? 6 : 4,
+      // temporal anchor: the torso eases toward its best position over a few frames instead of jumping there
+      prev: this.body && this.settled ? { P: this.body.P.clone(), u: this.body.u.clone() } : null,
     };
-    for (let it = 0; it < iterations; it++) {
-      frame();
-      const dS = new V3(), dP = new V3();
-      const pull = (acc, J, E, max, min, k) => {
-        const v = E.clone().sub(J), L = v.length() || 1e-6;
-        const ex = L > max ? L - max : L < min ? L - min : 0;
-        acc.addScaledVector(v, (ex / L) * k);
-      };
-      for (const l of hands) pull(dS, S.clone().addScaledVector(r, side(l) * B.shoulder), cur[l].E, ARM * 0.97, 0.22, 0.5);
-      for (const l of feet) pull(dP, P.clone().addScaledVector(r, side(l) * B.hip), cur[l].E, LEG * 0.96, 0.3, 0.5);
-      for (const l of knees) pull(dP, P.clone().addScaledVector(r, side(l) * B.hip), cur[l].E, B.thigh, B.thigh, 0.5);
-      S.add(dS).addScaledVector(dP, 0.4);
-      P.add(dP).addScaledVector(dS, 0.4);
-      const mid = S.clone().add(P).multiplyScalar(0.5), dir = unit(S.clone().sub(P));
-      S.copy(mid).addScaledVector(dir, B.spine / 2);
-      P.copy(mid).addScaledVector(dir, -B.spine / 2);
-      for (const [X, want] of [[S, chestOff], [P, hipOff]]) {  // keep chest and hips a little off the wall
-        const d = off(X);
-        if (d < want) X.addScaledVector(n, (want - d) * 0.5);
-        else if (d > want + 0.12) X.addScaledVector(n, (want + 0.12 - d) * 0.3);
-      }
-      if (!roof && S.y < P.y + 0.2) { S.y += 0.015; P.y -= 0.015; }  // shoulders above hips
+  }
+
+  _energy(c, x) {  // x = [P.x, P.y, P.z, q.x, q.y, q.z]; u = q / |q|
+    const P = this._P.set(x[0], x[1], x[2]), ql = Math.hypot(x[3], x[4], x[5]) || 1e-9;
+    const u = this._u.set(x[3] / ql, x[4] / ql, x[5] / ql);
+    const S = this._S.copy(P).addScaledVector(u, B.spine);
+    const r = this._r.copy(this.r).addScaledVector(u, -this.r.dot(u));
+    unit(r, this._side).applyAxisAngle(u, this.twist);
+    const sq = (v) => v * v, J = this._J, cur = this.cur;
+    let e = sq(ql - 1);
+    for (const l of c.hands) {  // arms: comfortable from bent to nearly straight, never over-reaching
+      const d = J.copy(S).addScaledVector(r, side(l) * B.shoulder).distanceTo(cur[l].E);
+      e += 2 * sq(Math.max(0, d - 0.5)) + 1 * sq(Math.max(0, 0.32 - d)) + 300 * sq(Math.max(0, d - ARM + 0.01)) + 80 * sq(Math.max(0, 0.2 - d));
     }
-    frame();
+    for (const l of c.feet) {  // legs: a stance leg is bent (~0.6-0.68 m hip to ankle); a trailing leg may straighten
+      const w = this.weight?.[l] || 1, d = J.copy(P).addScaledVector(r, side(l) * B.hip).distanceTo(cur[l].E);
+      e += w * (1.5 * sq(d - (w > 1 ? 0.6 : 0.68)) + 3 * sq(Math.max(0, 0.45 - d)) + 3 * sq(Math.max(0, d - 0.8)))
+        + 300 * sq(Math.max(0, d - LEG + 0.03)) + 150 * sq(Math.max(0, 0.3 - d));
+    }
+    for (const l of c.knees) {
+      const d = J.copy(P).addScaledVector(r, side(l) * B.hip).distanceTo(cur[l].E);
+      e += 300 * sq(d - B.thigh);
+    }
+    const hip = J.copy(P).sub(c.O).dot(c.n), chest = this._J2.copy(S).sub(c.O).dot(c.n);
+    e += 4 * sq(hip - c.hipOff) + 200 * sq(Math.max(0, 0.13 - hip));
+    e += 3 * sq(chest - c.chestOff) + 200 * sq(Math.max(0, 0.15 - chest));
+    e += c.balance * sq(J.copy(P).sub(c.base).dot(r));  // hips over the feet, side to side
+    e += 1.5 * u.distanceToSquared(c.want);
+    if (c.prev) e += 25 * P.distanceToSquared(c.prev.P) + 6 * u.distanceToSquared(c.prev.u);
+    return e;
+  }
+
+  _solve(iterations) {
+    const c = this._setup();
+    if (!c) { this.body = null; return; }
+    this._P ??= new V3(); this._u ??= new V3(); this._S ??= new V3(); this._r ??= new V3();
+    this._J ??= new V3(); this._J2 ??= new V3(); this._side ??= new V3(1, 0, 0);
+    let x;
+    if (this.body) x = [...this.body.P.toArray(), ...this.body.u.toArray()];
+    else {
+      const P0 = c.F ? c.F.clone().addScaledVector(c.roof ? c.want : UP, 0.55) : c.H.clone().addScaledVector(DOWN, 1.0);
+      x = [...P0.addScaledVector(c.n, c.hipOff).toArray(), ...c.want.toArray()];
+    }
+    // gradient descent with central-difference gradients and an adaptive step (allocation-light: ~25 steps a frame)
+    let e = this._energy(c, x), step = this._step || 0.01;
+    const g = new Array(6), y = new Array(6), h = 1e-4;
+    for (let it = 0; it < iterations; it++) {
+      let gl = 0;
+      for (let k = 0; k < 6; k++) {
+        const v = x[k];
+        x[k] = v + h; const ep = this._energy(c, x);
+        x[k] = v - h; const em = this._energy(c, x);
+        x[k] = v; g[k] = (ep - em) / (2 * h); gl += g[k] * g[k];
+      }
+      if (gl < 1e-12) break;
+      gl = Math.sqrt(gl);
+      let moved = false;
+      for (let tries = 0; tries < 10; tries++) {
+        for (let k = 0; k < 6; k++) y[k] = x[k] - (step * g[k]) / gl;
+        const ey = this._energy(c, y);
+        if (ey < e) { x = y.slice(); e = ey; step = Math.min(step * 1.5, 0.2); moved = true; break; }
+        step *= 0.4;
+      }
+      if (!moved) break;
+    }
+    this._step = Math.max(step, 0.002);
+    const P = new V3(x[0], x[1], x[2]);
+    let u = unit(new V3(x[3], x[4], x[5]));
+    let S = P.clone().addScaledVector(u, B.spine);
+    if (c.prev) {  // never lurch: the pelvis and chest move at most BODY_SPEED
+      const prevS = c.prev.P.clone().addScaledVector(c.prev.u, B.spine);
+      const max = BODY_SPEED * frameDt, clamp = (X, X0) => { const d = X.clone().sub(X0), l = d.length(); if (l > max) X.copy(X0).addScaledVector(d, max / l); };
+      clamp(P, c.prev.P); clamp(S, prevS);
+      u = unit(S.clone().sub(P), u);
+      S = P.clone().addScaledVector(u, B.spine);
+    }
+    const r = unit(perp(this.r, u), new V3(1, 0, 0)).applyAxisAngle(u, this.twist);
     const joint = {
       LH: S.clone().addScaledVector(r, -B.shoulder), RH: S.clone().addScaledVector(r, B.shoulder),
       LF: P.clone().addScaledVector(r, -B.hip), RF: P.clone().addScaledVector(r, B.hip),
     };
     for (const l of ['LH', 'RH']) {  // shoulders rise toward the ears on a long reach
-      if (!cur[l]) continue;
-      const reach = cur[l].E.clone().sub(joint[l]).dot(u);
+      if (!this.cur[l]) continue;
+      const reach = this.cur[l].E.clone().sub(joint[l]).dot(u);
       joint[l].addScaledVector(u, THREE.MathUtils.clamp(reach - 0.25, 0, 0.3) * 0.18);
     }
     joint.LK = joint.LF; joint.RK = joint.RF;
-    this.body = { S, P, u, r, n, O, joint };
+    this.body = { S, P, u, r, n: c.n, O: c.O, joint, energy: e };
   }
 
   // ---- meshes ----
@@ -324,11 +428,23 @@ export class Climber {
     }
   }
 
+  _steady(l, root, mid, end) {
+    const last = this.last[l];
+    if (last) {
+      const allowed = MID_SLACK * frameDt + 1.5 * Math.max(root.distanceTo(last.root), end.distanceTo(last.end));
+      const d = mid.clone().sub(last.mid), len = d.length();
+      if (len > allowed) mid = last.mid.clone().addScaledVector(d, allowed / len);
+    }
+    this.last[l] = { root: root.clone(), mid: mid.clone(), end: end.clone() };
+    return mid;
+  }
+
   _draw() {
     const b = this.body, m = this.m, cur = this.cur;
     this.group.visible = !!b;
     if (!b) return;
     const { S, P, u, r, n } = b;
+    this.dbg = {};  // joint positions, for tests
     const out = r.clone().cross(u);  // the climber's back, away from the wall
     const basis = new THREE.Matrix4().makeBasis(r, u, out);
     const blob = (mesh, c, rx, ry, rz) => { mesh.position.copy(c); mesh.quaternion.setFromRotationMatrix(basis); mesh.scale.set(rx, ry, rz); };
@@ -349,11 +465,14 @@ export class Climber {
       const J = b.joint[l], q = cur[l], o = r.clone().multiplyScalar(side(l));
       const W = q ? q.E : J.clone().addScaledVector(DOWN, 0.5).addScaledVector(n, 0.1);
       const f = q?.f ?? UP;
-      const pole = q?.mode === 'palm' ? f.clone().multiplyScalar(-0.3).addScaledVector(n, 0.8).addScaledVector(o, 0.5).addScaledVector(UP, 0.3)
-        : q?.mode === 'gaston' ? o.clone().addScaledVector(DOWN, 0.3).addScaledVector(n, 0.3)
-        : f.dot(UP) < -0.5 || q?.mode === 'undercling' ? DOWN.clone().addScaledVector(n, 0.6).addScaledVector(o, 0.3)
-        : f.clone().negate().addScaledVector(DOWN, 0.7).addScaledVector(n, 0.5).addScaledVector(o, 0.35);
-      const El = ik(J, W, B.upper, B.fore, pole);
+      // elbows: down, a little out and back for a pull; out for a gaston; under the hand for an undercling;
+      // back and up for a palm press
+      const pole = q?.mode === 'palm' ? n.clone().addScaledVector(o, 0.6).addScaledVector(UP, 0.3)
+        : q?.mode === 'gaston' ? o.clone().addScaledVector(n, 0.3).addScaledVector(DOWN, 0.2)
+        : f.dot(UP) < -0.5 || q?.mode === 'undercling' ? DOWN.clone().addScaledVector(n, 0.8).addScaledVector(o, 0.2)
+        : DOWN.clone().multiplyScalar(0.8).addScaledVector(o, 0.5).addScaledVector(n, 0.4);
+      const El = this._steady(l, J, ik(J, W, B.upper, B.fore, pole, this.memo, l, n, 0.3), W);
+      this.dbg[l] = { root: J.clone(), mid: El.clone(), end: W.clone() };
       bone(m.arm[l][0], J, El, 0.043); bone(m.arm[l][1], El, W, 0.034);
       joint(J, 0.055); joint(El, 0.038);
       const hm = m.hands[l];
@@ -368,11 +487,13 @@ export class Climber {
     for (const l of ['LF', 'RF']) {
       const J = b.joint[l], o = r.clone().multiplyScalar(side(l));
       const q = cur[l] || this._flag(l, b), K = cur[l === 'LF' ? 'LK' : 'RK'];
-      const pole = q.mode === 'heel' ? o.clone().multiplyScalar(0.7).addScaledVector(UP, 0.5).addScaledVector(n, 0.3)
-        : q.mode === 'drop-knee' ? DOWN.clone().multiplyScalar(0.8).addScaledVector(o, -0.3).addScaledVector(n, 0.25)
-        : q.mode === 'flag' ? n.clone().multiplyScalar(0.4).addScaledVector(o, 0.2).addScaledVector(UP, 0.1)
-        : n.clone().multiplyScalar(0.75).addScaledVector(o, 0.55).addScaledVector(UP, 0.15);
-      const Kn = K ? K.E : ik(J, q.E, B.thigh, B.shin, pole);
+      // knees: out to the side and away from the wall (frog); down and in for a drop-knee; up and out for a heel hook
+      const pole = q.mode === 'heel' ? o.clone().multiplyScalar(0.6).addScaledVector(UP, 0.6).addScaledVector(n, 0.4)
+        : q.mode === 'drop-knee' ? DOWN.clone().multiplyScalar(0.8).addScaledVector(o, -0.25).addScaledVector(n, 0.1)
+        : q.mode === 'flag' ? n.clone().multiplyScalar(0.5).addScaledVector(o, 0.2).addScaledVector(UP, 0.2)
+        : o.clone().multiplyScalar(0.8).addScaledVector(n, 0.6).addScaledVector(UP, 0.25);
+      const Kn = this._steady(l, J, K ? K.E.clone() : ik(J, q.E, B.thigh, B.shin, pole, this.memo, l, n, q.mode === 'drop-knee' ? -0.1 : 0.25), q.E);
+      this.dbg[l] = { root: J.clone(), mid: Kn.clone(), end: q.E.clone() };
       bone(m.leg[l][0], J, Kn, 0.062); bone(m.leg[l][1], Kn, q.E, 0.045);
       joint(J, 0.064); joint(Kn, 0.05); joint(q.E, 0.038);
       const shoe = m.shoes[l];  // ellipsoid from heel to toe, top of the foot along s
