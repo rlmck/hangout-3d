@@ -1,0 +1,25 @@
+{
+  "_note": "BLOCKOUT ESTIMATE from a 54s phone walkthrough. Only the 3.6m wall height is measured. Floor plan, widths and angles are visual estimates: replace with tape-measure values. Units: metres, degrees. Each wall faces to the right of its from->to direction. Angle = degrees past vertical; positive = overhanging toward the climber.",
+  "wall_height_m": 3.6,
+  "room": {"width_x": 14.0, "depth_y": 10.0, "ceiling_m": 4.6},
+  "walls": [
+    {"id": "W-west",        "from": [0, 0],    "to": [0, 8.5],   "profile": [[2.3, 0], [1.3, 25]], "notes": "Long side wall, steepens near top; corridor toward mezzanine"},
+    {"id": "N-under-mezz",  "from": [0, 10],   "to": [6, 10],    "profile": [[2.2, 5], [1.4, 30]], "notes": "End wall below/near mezzanine railing"},
+    {"id": "N-east",        "from": [6, 10],   "to": [14, 10],   "profile": [[2.4, 10], [1.2, 35]], "notes": "Pink/black/white chevron wall with grey volumes"},
+    {"id": "E-main",        "from": [14, 10],  "to": [14, 2.2],  "profile": [[2.2, 0], [1.4, 20]], "notes": "Wall with triangular grey volumes, ends at doorway"},
+    {"id": "E-prow",        "from": [14, 2.2], "to": [13.2, 1.4],"profile": [[2.4, 5], [1.2, 30]], "notes": "Angled prow beside door to lounge"},
+    {"id": "S-east",        "from": [9.5, 0],  "to": [6, 0],     "profile": [[2.4, 0], [1.2, 70]], "notes": "End wall with roof lip near top (reception/shop gap to its east)"},
+    {"id": "S-west",        "from": [6, 0],    "to": [0, 0],     "profile": [[2.2, 15], [1.4, 25]], "notes": "Corner section, slight overhang"},
+    {"id": "Island-N",      "from": [9, 6.5],  "to": [5, 6.5],   "profile": [[2.0, 0], [0.6, 60], [1.0, 10]], "notes": "Freestanding block with overhanging cap (mushroom)"},
+    {"id": "Island-W",      "from": [5, 6.5],  "to": [5, 3.5],   "profile": [[2.0, 0], [0.6, 60], [1.0, 10]], "notes": ""},
+    {"id": "Island-S",      "from": [5, 3.5],  "to": [9, 3.5],   "profile": [[2.0, 5], [0.6, 60], [1.0, 10]], "notes": ""},
+    {"id": "Island-E",      "from": [9, 3.5],  "to": [9, 6.5],   "profile": [[2.0, 0], [0.6, 60], [1.0, 10]], "notes": ""}
+  ],
+  "openings": [
+    {"id": "door-lounge",  "at": [13.6, 0.7], "notes": "Doorway to lounge/entrance"},
+    {"id": "reception",    "at": [11.5, 0.2], "notes": "Shop shelving / reception gap"}
+  ],
+  "mezzanine": {"x": [0, 6], "y": [8.5, 10], "floor_height_m": 3.0, "railing_height_m": 1.1},
+  "volumes": {"count": 28, "seed": 7, "notes": "Placeholder grey triangular volumes, randomly placed. Real positions unknown."},
+  "spawn": {"position": [3.0, 1.7, 3.0], "look_at": [10, 1.7, 8]}
+}

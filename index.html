@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#15161a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>The Hangout</title>
+<style>
+  :root { --panel: rgba(18, 19, 23, 0.86); --line: rgba(255,255,255,0.12); --text: #e9e9ec; --dim: #9a9ca5; --accent: #ff3d8b; --plan: #ffd34d; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #15161a; color: var(--text);
+    font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  canvas { display: block; touch-action: none; }
+  .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  #labels { position: fixed; inset: 0; pointer-events: none; }
+  #crosshair { position: fixed; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; pointer-events: none; }
+  #crosshair::before, #crosshair::after { content: ""; position: absolute; background: rgba(255,255,255,0.85); box-shadow: 0 0 2px #000; }
+  #crosshair::before { left: 6px; top: 0; width: 2px; height: 14px; }
+  #crosshair::after { top: 6px; left: 0; height: 2px; width: 14px; }
+  .hud { position: fixed; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; backdrop-filter: blur(6px); }
+  #help { top: 12px; left: 12px; padding: 8px 12px; color: var(--dim); }
+  #help b { color: var(--text); font-weight: 600; }
+  kbd { font: 11px ui-monospace, Consolas, monospace; padding: 1px 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; color: var(--text); }
+  #info { left: 12px; bottom: 12px; width: 340px; max-width: calc(100vw - 24px); padding: 12px 14px; display: none; }
+  #info h2 { margin: 0 0 2px; font-size: 16px; }
+  #info .pin { float: right; font-size: 11px; color: var(--accent); }
+  #info .notes { color: var(--dim); margin-bottom: 8px; }
+  #info table { width: 100%; border-collapse: collapse; }
+  #info td { padding: 3px 4px; border-top: 1px solid var(--line); }
+  #info tr.on td { background: rgba(255, 61, 139, 0.18); color: #fff; }
+  #info td.num { text-align: right; font-family: ui-monospace, Consolas, monospace; }
+  #info .foot { margin-top: 8px; color: var(--dim); font-size: 12px; }
+  #toast { top: 12px; right: 12px; padding: 8px 12px; display: none; max-width: 420px; }
+  #toast.err { border-color: #ff5a5a; color: #ffb3b3; }
+  #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(10, 10, 12, 0.55); cursor: pointer; }
+  #overlay .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 22px 28px; text-align: center; }
+  #overlay h1 { margin: 0 0 4px; font-size: 20px; }
+  #overlay p { margin: 4px 0; color: var(--dim); }
+  #overlay .go { margin-top: 12px; color: var(--accent); font-weight: 600; }
+  .label { font: 600 11px ui-monospace, Consolas, monospace; color: #15161a; background: var(--plan); box-shadow: 0 1px 3px rgba(0,0,0,.4); padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+  .label.opening { background: #4cc3ff; font-weight: 500; }
+  .label.mezz { background: #c9cbd3; font-weight: 500; }
+  body.plan #crosshair { display: none; }
+  #problem { right: 12px; bottom: 12px; width: 360px; max-width: calc(100vw - 24px); max-height: calc(100vh - 90px); overflow-y: auto; padding: 12px 14px; display: none; }
+  #problem h2 { margin: 0 0 2px; font-size: 16px; }
+  #problem h3 { margin: 0 0 6px; font-size: 13px; color: var(--dim); font-weight: 600; }
+  #problem .grade { font-weight: 400; color: var(--dim); }
+  #problem .dim { color: var(--dim); }
+  #problem .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 7px; vertical-align: 1px; }
+  #problem .rules { margin: 6px 0; }
+  #problem details { color: var(--dim); margin-bottom: 6px; font-size: 12px; }
+  #problem summary { cursor: pointer; }
+  #problem ol { margin: 6px 0 0; padding-left: 22px; }
+  #problem li { padding: 4px 6px; border-radius: 5px; color: var(--dim); cursor: pointer; }
+  #problem li.on { background: rgba(255, 61, 139, 0.18); color: #fff; }
+  #problem .tags span { display: inline-block; font-size: 11px; padding: 0 6px; margin: 3px 4px 0 0; border: 1px solid var(--line); border-radius: 9px; }
+  #problem .prow { padding: 3px 0; cursor: pointer; }
+  #problem .foot { margin-top: 8px; color: var(--dim); font-size: 12px; }
+  .btn { font: inherit; color: var(--text); background: rgba(255,255,255,0.08); border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 12px; cursor: pointer; touch-action: manipulation; }
+  .btn:disabled { opacity: 0.35; cursor: default; }
+  #problem .pbar { display: flex; gap: 8px; margin-bottom: 8px; }
+  #problem select { flex: 1; min-width: 0; font: inherit; color: var(--text); background: #24262c; border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 8px; }
+  #problem .cur { margin: 8px 0 6px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 61, 139, 0.14); }
+  #problem .mnum { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 2px; }
+  #problem .nav { display: flex; gap: 8px; margin-bottom: 6px; }
+  #problem .nav .btn { flex: 1; }
+  #problem details.more > summary { margin: 4px 0; color: var(--text); }
+  body:not(.touch) #problem .cur { display: none; }
+  #info .x { float: right; font: 20px/1 system-ui, sans-serif; color: var(--text); background: none; border: 0; padding: 0 2px 6px 10px; cursor: pointer; }
+  #joy, #mapbtn { display: none; }
+  /* phones and tablets */
+  body.touch #help, body.touch #crosshair { display: none; }
+  body.touch #problem { left: 8px; right: 8px; top: calc(8px + env(safe-area-inset-top)); bottom: auto; width: auto; max-height: 48vh; padding: 10px 12px; }
+  body.touch #problem h2 { font-size: 15px; }
+  body.touch .btn, body.touch #problem select { min-height: 42px; font-size: 15px; }
+  body.touch #info { left: 8px; right: 8px; width: auto; bottom: calc(148px + env(safe-area-inset-bottom)); max-height: 34vh; overflow-y: auto; }
+  body.touch #toast { left: 8px; right: 8px; top: auto; bottom: calc(148px + env(safe-area-inset-bottom)); text-align: center; }
+  body.touch #joy { display: block; position: fixed; left: 20px; bottom: calc(20px + env(safe-area-inset-bottom)); width: 116px; height: 116px;
+    border-radius: 50%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.18); touch-action: none; }
+  #joy .knob { position: absolute; left: 33px; top: 33px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.32); pointer-events: none; }
+  body.touch #mapbtn { display: block; position: fixed; right: 20px; bottom: calc(40px + env(safe-area-inset-bottom)); width: 72px; height: 72px;
+    border-radius: 50%; background: var(--panel); font-weight: 600; }
+</style>
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="labels"></div>
+<div id="crosshair"></div>
+<div id="help" class="hud"><b>WASD</b> move · <b>Shift</b> run · <b>Mouse</b> look · <kbd>P</kbd> plan view · <kbd>R</kbd> respawn · <kbd>N</kbd> problem · <kbd>[</kbd><kbd>]</kbd> moves · <kbd>G</kbd> go to it · <b>Click</b> pin info · <kbd>Esc</kbd> release mouse</div>
+<div id="info" class="hud"></div>
+<div id="toast" class="hud"></div>
+<div id="problem" class="hud"></div>
+<div id="joy" aria-label="Walk"><div class="knob"></div></div>
+<button id="mapbtn" class="btn">Map</button>
+<div id="overlay"><div class="card">
+  <h1>The Hangout</h1>
+  <p>Schematic blockout: only the 3.6 m wall height is measured.</p>
+  <p>Look at a wall panel to see its id, angle and notes.</p>
+  <div class="go">Click to walk</div>
+</div></div>
+<script type="module" src="viewer.js"></script>
+</body>
+</html>

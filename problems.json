@@ -1,0 +1,1358 @@
+{
+  "_note": "Boulder problems drawn by the viewer (not baked into the model). Hold position: {wall, along_m, height_m} = metres along the wall from its 'from' end and height above the floor, or {at: [plan x, plan y, height], normal: [nx, ny]} for holds off the wall grid. Types: jug, crimp, sloper, pinch, pocket, foot, volume (size_m [w, h, depth], triangle point down), arete and spot (body positions, no hold; a start/finish arete gets a tape mark). facing = the way the gripping edge points (up/down/left/right). Each move is the body position AFTER the move: LH/RH/LF/RF = hold id, or null for a flagging or free limb. Move 0 is the start. Knees: LK/RK = hold or spot for a kneebar. dynamic: true marks a dynamic move (check_problems.py allows a longer reach). Off-wall holds may give a 3D normal [nx, ny, nz]; on a roof, 'up' [ux, uy] is the direction of travel. view: optional {position, look_at} for the G key, like spawn.",
+  "house_rules": "Arêtes, side walls and volumes are always in.",
+  "problems": [
+    {
+      "id": "letting-go",
+      "name": "Letting Go",
+      "grade": "V3",
+      "colour": "#3aa0ff",
+      "wall": "W23",
+      "style": [
+        "slab",
+        "arete",
+        "balance"
+      ],
+      "rules": "Arêtes in. Start left hand on the taped arête, right hand on H1. Finish matched on T. The panels are plain plywood, so feet go on holds, the volume or the arête.",
+      "notes": "The arête is the comfort blanket, but the finish is 1.5 m right of it: at some point you have to step off it onto the volume with only a palm and a small crimp. The crux is at about 1.4 m foot height, so a fall is a slide onto the mat. Easier: add an edge at about (1.3, 2.3) so the right hand doesn't have to palm. Harder: remove H2. UNCONFIRMED: hold positions are suggestions, not real holds.",
+      "holds": [
+        {
+          "id": "A1",
+          "along_m": 0.0,
+          "height_m": 1.45,
+          "type": "arete",
+          "role": "start",
+          "notes": "Taped start on the left arête (W23/W24 corner)."
+        },
+        {
+          "id": "A2",
+          "along_m": 0.0,
+          "height_m": 2.2,
+          "type": "arete",
+          "notes": "Layback position higher on the arête."
+        },
+        {
+          "id": "A3",
+          "along_m": 0.0,
+          "height_m": 1.1,
+          "type": "arete",
+          "notes": "Left heel-toe on the arête, heel wrapped round the corner."
+        },
+        {
+          "id": "H1",
+          "along_m": 0.45,
+          "height_m": 1.5,
+          "type": "pinch",
+          "role": "start",
+          "notes": "Slopey pinch. Start right hand, later a left foot (hand-foot match)."
+        },
+        {
+          "id": "F1",
+          "along_m": 0.25,
+          "height_m": 0.35,
+          "type": "foot",
+          "notes": "Small foot chip."
+        },
+        {
+          "id": "F2",
+          "along_m": 0.7,
+          "height_m": 0.4,
+          "type": "foot",
+          "notes": "Small foot chip."
+        },
+        {
+          "id": "F3",
+          "along_m": 0.75,
+          "height_m": 0.9,
+          "type": "foot",
+          "notes": "Small edge for the first high-step."
+        },
+        {
+          "id": "H2",
+          "along_m": 0.85,
+          "height_m": 2.15,
+          "type": "crimp",
+          "facing": "right",
+          "grip": "sidepull",
+          "notes": "Slopey crimp used as a right-hand sidepull: lean left onto the arête."
+        },
+        {
+          "id": "H3",
+          "along_m": 0.55,
+          "height_m": 2.55,
+          "type": "crimp",
+          "notes": "Small crimp: the only real hand through the crux."
+        },
+        {
+          "id": "V1",
+          "along_m": 1.25,
+          "height_m": 1.5,
+          "type": "volume",
+          "size_m": [
+            0.5,
+            0.6,
+            0.2
+          ],
+          "notes": "Triangular volume, point down (1.0-1.5 m along, 1.2-1.8 m up). Right foot edges its lower facet; right palm presses its top edge."
+        },
+        {
+          "id": "F6",
+          "along_m": 0.85,
+          "height_m": 1.8,
+          "type": "foot",
+          "notes": "Small edge."
+        },
+        {
+          "id": "H4",
+          "along_m": 1.25,
+          "height_m": 2.8,
+          "type": "sloper",
+          "notes": "Sloping dish: fine as long as your hips stay over your feet."
+        },
+        {
+          "id": "T",
+          "along_m": 1.55,
+          "height_m": 3.3,
+          "type": "jug",
+          "role": "finish",
+          "notes": "Finishing jug. Match."
+        }
+      ],
+      "moves": [
+        {
+          "text": "Start: left hand on the taped arête, right hand on the H1 pinch, feet on F1 and F2. Hips in, weight on your feet.",
+          "technique": [
+            "start"
+          ],
+          "LH": "A1",
+          "RH": "H1",
+          "LF": "F1",
+          "RF": "F2"
+        },
+        {
+          "text": "Right foot high-steps to F3. Layback off the arête and walk your left hand up it.",
+          "technique": [
+            "high-step",
+            "layback"
+          ],
+          "LH": "A2",
+          "RH": "H1",
+          "LF": "F1",
+          "RF": "F3"
+        },
+        {
+          "text": "Right hand to H2 as a sidepull, leaning left onto the arête.",
+          "technique": [
+            "sidepull"
+          ],
+          "LH": "A2",
+          "RH": "H2",
+          "LF": "F1",
+          "RF": "F3"
+        },
+        {
+          "text": "Left heel-toe on the arête, pull through it and take the H3 crimp with your left hand.",
+          "technique": [
+            "heel-toe",
+            "arête"
+          ],
+          "LH": "H3",
+          "RH": "H2",
+          "LF": "A3",
+          "RF": "F3"
+        },
+        {
+          "text": "Left foot high-steps onto the start pinch H1 and stands up. The arête won't get you to the finish from here.",
+          "technique": [
+            "high-step",
+            "hand-foot match"
+          ],
+          "LH": "H3",
+          "RH": "H2",
+          "LF": "H1",
+          "RF": "F3"
+        },
+        {
+          "text": "Crux. Right foot onto the volume's lower facet, drop your right hand to palm its top. Move your hips right over your right foot and stand up, with only H3 for balance. Flag your left leg out left.",
+          "technique": [
+            "rockover",
+            "palm press",
+            "flag"
+          ],
+          "LH": "H3",
+          "RH": "V1",
+          "LF": null,
+          "RF": "V1"
+        },
+        {
+          "text": "Left foot to F6, right hand up to the H4 sloper.",
+          "technique": [
+            "sloper",
+            "weight shift"
+          ],
+          "LH": "H3",
+          "RH": "H4",
+          "LF": "F6",
+          "RF": "V1"
+        },
+        {
+          "text": "Left hand to the T jug, then match.",
+          "technique": [
+            "match"
+          ],
+          "LH": "T",
+          "RH": "T",
+          "LF": "F6",
+          "RF": "V1"
+        }
+      ]
+    },
+    {
+      "id": "bridge-end",
+      "name": "Bridge End",
+      "grade": "V2",
+      "colour": "#ff9f1c",
+      "wall": "W23",
+      "style": [
+        "slab",
+        "arete",
+        "corner"
+      ],
+      "rules": "Arêtes in, including the bridge's outside corner. Start right hand on the taped arête, left hand on S1. Finish matched on T. The end of the bridge is in for a palm press.",
+      "notes": "Uses the right arête (W23/W21 corner). Above 2.4 m the bridge end sticks out 0.6-0.95 m from the slab and makes an inside corner. You sidepull its outside corner, rock over into the corner, then press off the bridge end to get the left hand free. UNCONFIRMED: hold positions are suggestions, not real holds.",
+      "holds": [
+        {
+          "id": "A1",
+          "along_m": 3.1,
+          "height_m": 1.3,
+          "type": "arete",
+          "role": "start",
+          "notes": "Taped start on the right arête (W23/W21 corner)."
+        },
+        {
+          "id": "A0",
+          "along_m": 3.1,
+          "height_m": 0.5,
+          "type": "arete",
+          "notes": "Right toe on the arête edge."
+        },
+        {
+          "id": "A3",
+          "along_m": 3.1,
+          "height_m": 0.95,
+          "type": "arete",
+          "notes": "Right toe higher on the arête."
+        },
+        {
+          "id": "A2",
+          "along_m": 3.1,
+          "height_m": 2.0,
+          "type": "arete",
+          "notes": "Layback position higher on the arête."
+        },
+        {
+          "id": "S1",
+          "along_m": 2.55,
+          "height_m": 1.45,
+          "type": "crimp",
+          "role": "start",
+          "notes": "Incut crimp. Start left hand."
+        },
+        {
+          "id": "F1",
+          "along_m": 2.65,
+          "height_m": 0.35,
+          "type": "foot",
+          "notes": "Foot chip."
+        },
+        {
+          "id": "F2",
+          "along_m": 2.85,
+          "height_m": 0.85,
+          "type": "foot",
+          "notes": "Small edge."
+        },
+        {
+          "id": "P1",
+          "along_m": 2.45,
+          "height_m": 2.15,
+          "type": "pinch",
+          "size_m": [
+            0.08,
+            0.2,
+            0.08
+          ],
+          "notes": "Wide pinch, thumb on the left side."
+        },
+        {
+          "id": "B1",
+          "at": [
+            7.7,
+            5.1,
+            2.65
+          ],
+          "normal": [
+            0.7071,
+            -0.7071
+          ],
+          "type": "arete",
+          "grip": "sidepull",
+          "notes": "Outside corner of the bridge end, about 0.7 m out from the slab. Right-hand sidepull: lean left."
+        },
+        {
+          "id": "F3",
+          "along_m": 2.9,
+          "height_m": 1.45,
+          "type": "foot",
+          "notes": "Small edge tucked into the corner under the bridge end."
+        },
+        {
+          "id": "F4",
+          "along_m": 2.35,
+          "height_m": 1.4,
+          "type": "foot",
+          "notes": "Foot edge out left for the bridging position."
+        },
+        {
+          "id": "B2",
+          "at": [
+            7.35,
+            5.1,
+            2.6
+          ],
+          "normal": [
+            0,
+            -1
+          ],
+          "type": "spot",
+          "grip": "palm",
+          "notes": "Blank end face of the bridge: right palm presses against it."
+        },
+        {
+          "id": "T",
+          "along_m": 2.55,
+          "height_m": 3.3,
+          "type": "jug",
+          "role": "finish",
+          "notes": "Finishing jug. Match."
+        }
+      ],
+      "moves": [
+        {
+          "text": "Start: right hand on the taped arête, left hand on the S1 crimp. Left foot on F1, right toe on the arête edge.",
+          "technique": [
+            "start"
+          ],
+          "LH": "S1",
+          "RH": "A1",
+          "LF": "F1",
+          "RF": "A0"
+        },
+        {
+          "text": "Left foot up to F2, layback the arête and slap your right hand up it.",
+          "technique": [
+            "layback"
+          ],
+          "LH": "S1",
+          "RH": "A2",
+          "LF": "F2",
+          "RF": "A0"
+        },
+        {
+          "text": "Right toe higher on the arête, left hand to the P1 pinch.",
+          "technique": [
+            "toe on arête",
+            "pinch"
+          ],
+          "LH": "P1",
+          "RH": "A2",
+          "LF": "F2",
+          "RF": "A3"
+        },
+        {
+          "text": "Right hand out to the bridge's outside corner as a sidepull. Lean left to keep it working.",
+          "technique": [
+            "sidepull"
+          ],
+          "LH": "P1",
+          "RH": "B1",
+          "LF": "F2",
+          "RF": "A3"
+        },
+        {
+          "text": "Crux. Rock over onto the small F3 edge in the corner, pushing your hips right and in. Stand up between the sidepull and the pinch.",
+          "technique": [
+            "rockover",
+            "high-step"
+          ],
+          "LH": "P1",
+          "RH": "B1",
+          "LF": "F2",
+          "RF": "F3"
+        },
+        {
+          "text": "Left foot out to F4, then swap your right hand to a palm press on the bridge end, so you're bridged across the corner.",
+          "technique": [
+            "bridging",
+            "palm press"
+          ],
+          "LH": "P1",
+          "RH": "B2",
+          "LF": "F4",
+          "RF": "F3"
+        },
+        {
+          "text": "Left hand to the T jug, then match.",
+          "technique": [
+            "match"
+          ],
+          "LH": "T",
+          "RH": "T",
+          "LF": "F4",
+          "RF": "F3"
+        }
+      ]
+    },
+    {
+      "id": "arch-enemy",
+      "name": "Arch Enemy",
+      "grade": "V5",
+      "colour": "#2fd07a",
+      "wall": "W15",
+      "style": [
+        "cave",
+        "overhang",
+        "arete",
+        "compression"
+      ],
+      "rules": "Sit start, hands on S1 and S2. Finish matched on the T jug under the lip.",
+      "notes": "The left side of the cave. The roof's left edge is a real arête from 1.2 to 2.1 m; above that it turns into an inside corner with the W22b face. You squeeze between the arête and a pinch, heel-hook the arête to get established, then drop-knee and stem off the side wall for a long reach to the jug under the lip. FALL ZONE: this side lands in the cave walk-under path, so keep it clear while someone is on it. On the 45° panels a hold 0.5 m higher is about 0.7 m further along the wall, so moves are longer than the heights suggest. UNCONFIRMED: hold positions are suggestions, not real holds.",
+      "holds": [
+        {
+          "id": "S1",
+          "along_m": 0.7,
+          "height_m": 0.95,
+          "type": "crimp",
+          "role": "start",
+          "notes": "Incut crimp rail. Start left hand."
+        },
+        {
+          "id": "S2",
+          "along_m": 1.15,
+          "height_m": 0.9,
+          "type": "crimp",
+          "role": "start",
+          "facing": "right",
+          "grip": "sidepull",
+          "size_m": [
+            0.06,
+            0.14,
+            0.05
+          ],
+          "notes": "Positive sidepull edge. Start right hand."
+        },
+        {
+          "id": "F1",
+          "along_m": 0.55,
+          "height_m": 0.3,
+          "type": "foot",
+          "notes": "Foot chip."
+        },
+        {
+          "id": "F2",
+          "along_m": 1.3,
+          "height_m": 0.35,
+          "type": "foot",
+          "notes": "Foot chip."
+        },
+        {
+          "id": "H1",
+          "along_m": 1.3,
+          "height_m": 1.65,
+          "type": "pinch",
+          "size_m": [
+            0.08,
+            0.2,
+            0.09
+          ],
+          "notes": "Fat pinch, 0.45 m out under the roof."
+        },
+        {
+          "id": "A1",
+          "along_m": 0.0,
+          "height_m": 1.75,
+          "type": "arete",
+          "notes": "The roof's left arête: squeeze it against H1."
+        },
+        {
+          "id": "A2",
+          "along_m": 0.0,
+          "height_m": 1.35,
+          "type": "arete",
+          "notes": "Left heel hook on the arête, just below your hand."
+        },
+        {
+          "id": "F4",
+          "along_m": 1.15,
+          "height_m": 1.25,
+          "type": "foot",
+          "notes": "Edge right at the joint where the wall kicks out to 45°."
+        },
+        {
+          "id": "F5",
+          "along_m": 0.95,
+          "height_m": 1.95,
+          "type": "foot",
+          "notes": "Foot edge 0.75 m out on the roof, for the right-foot drop-knee."
+        },
+        {
+          "id": "H2",
+          "along_m": 0.75,
+          "height_m": 2.3,
+          "type": "crimp",
+          "notes": "Positive crimp, 1.1 m out. Lock off on it."
+        },
+        {
+          "id": "H3",
+          "along_m": 0.4,
+          "height_m": 2.55,
+          "type": "sloper",
+          "notes": "Sloper near the corner with the side wall, 1.35 m out."
+        },
+        {
+          "id": "W1",
+          "wall": "W22b",
+          "along_m": 0.75,
+          "height_m": 2.25,
+          "type": "foot",
+          "notes": "Foot hold on the side wall (W22b), 0.2 m out from the roof: left toe presses into it."
+        },
+        {
+          "id": "T",
+          "along_m": 0.85,
+          "height_m": 3.3,
+          "type": "jug",
+          "role": "finish",
+          "notes": "Jug just under the lip, 2.1 m out. Match."
+        }
+      ],
+      "moves": [
+        {
+          "text": "Sit start: left hand on the S1 rail, right hand on the S2 sidepull, feet on F1 and F2.",
+          "technique": [
+            "sit start"
+          ],
+          "LH": "S1",
+          "RH": "S2",
+          "LF": "F1",
+          "RF": "F2"
+        },
+        {
+          "text": "Pull on and slap your right hand up to the H1 pinch as the wall kicks out.",
+          "technique": [
+            "pinch"
+          ],
+          "LH": "S1",
+          "RH": "H1",
+          "LF": "F1",
+          "RF": "F2"
+        },
+        {
+          "text": "Left hand out to the arête and squeeze it against the pinch.",
+          "technique": [
+            "compression",
+            "arête"
+          ],
+          "LH": "A1",
+          "RH": "H1",
+          "LF": "F1",
+          "RF": "F2"
+        },
+        {
+          "text": "Left heel hook on the arête just below your hand, right foot up to F4. Pull your hips into the roof.",
+          "technique": [
+            "heel hook"
+          ],
+          "LH": "A1",
+          "RH": "H1",
+          "LF": "A2",
+          "RF": "F4"
+        },
+        {
+          "text": "Right hand to the H2 crimp, locking off against the heel.",
+          "technique": [
+            "lock-off",
+            "crimp"
+          ],
+          "LH": "A1",
+          "RH": "H2",
+          "LF": "A2",
+          "RF": "F4"
+        },
+        {
+          "text": "Right foot up into the roof on F5 and drop the knee. Your hips turn left, toward the arête.",
+          "technique": [
+            "drop knee"
+          ],
+          "LH": "A1",
+          "RH": "H2",
+          "LF": "A2",
+          "RF": "F5"
+        },
+        {
+          "text": "Let go of the arête and move your left hand up to the H3 sloper, held in by the heel and the drop-knee.",
+          "technique": [
+            "sloper",
+            "deadpoint"
+          ],
+          "LH": "H3",
+          "RH": "H2",
+          "LF": "A2",
+          "RF": "F5"
+        },
+        {
+          "text": "Walk your left heel up the arête to where your hand was (A1).",
+          "technique": [
+            "heel hook"
+          ],
+          "LH": "H3",
+          "RH": "H2",
+          "LF": "A1",
+          "RF": "F5"
+        },
+        {
+          "text": "Swap the heel for a toe: your left toe presses W1 on the side wall, stemming against the drop-knee.",
+          "technique": [
+            "toe press",
+            "stem"
+          ],
+          "LH": "H3",
+          "RH": "H2",
+          "LF": "W1",
+          "RF": "F5"
+        },
+        {
+          "text": "Crux: pull your hips into the roof and reach your right hand long to the T jug under the lip.",
+          "technique": [
+            "long reach",
+            "core"
+          ],
+          "LH": "H3",
+          "RH": "T",
+          "LF": "W1",
+          "RF": "F5",
+          "dynamic": true
+        },
+        {
+          "text": "Match T.",
+          "technique": [
+            "match"
+          ],
+          "LH": "T",
+          "RH": "T",
+          "LF": "W1",
+          "RF": "F5"
+        }
+      ]
+    },
+    {
+      "id": "black-hole",
+      "name": "Black Hole",
+      "grade": "V8",
+      "colour": "#ffd21f",
+      "wall": "W15",
+      "style": [
+        "cave",
+        "overhang",
+        "power",
+        "dynamic"
+      ],
+      "rules": "Sit start matched on S1. Finish matched on the T jug under the lip.",
+      "notes": "The right side of the cave, using the vertical side wall as a foot stem. Hard bits: pulling on with a drop-knee to a sloper pinch; a two-finger pocket; the crux, a left-hand deadpoint from the stem to a small crimp 1.1 m higher along the roof, where your feet cut loose; and stopping the swing with a toe hook on the side wall. After that, a heel on the old pocket gets you the lip. UNCONFIRMED: depends on W16-cave being a vertical side wall (still unconfirmed), and the hold positions are suggestions.",
+      "holds": [
+        {
+          "id": "S1",
+          "along_m": 4.0,
+          "height_m": 0.95,
+          "type": "crimp",
+          "role": "start",
+          "size_m": [
+            0.24,
+            0.035,
+            0.04
+          ],
+          "notes": "Sit start rail, matched. Wide enough for both hands."
+        },
+        {
+          "id": "F1",
+          "along_m": 3.75,
+          "height_m": 0.3,
+          "type": "foot",
+          "notes": "Foot chip."
+        },
+        {
+          "id": "F2",
+          "along_m": 4.35,
+          "height_m": 0.35,
+          "type": "foot",
+          "notes": "Foot chip."
+        },
+        {
+          "id": "F3",
+          "along_m": 4.4,
+          "height_m": 0.8,
+          "type": "foot",
+          "notes": "Edge for the right-foot drop-knee."
+        },
+        {
+          "id": "H1",
+          "along_m": 3.7,
+          "height_m": 1.6,
+          "type": "sloper",
+          "grip": "pinch",
+          "notes": "Sloper pinch on the first 45° panel. Later a left foot."
+        },
+        {
+          "id": "H2",
+          "along_m": 4.4,
+          "height_m": 1.95,
+          "type": "pocket",
+          "size_m": [
+            0.07,
+            0.06,
+            0.05
+          ],
+          "notes": "Two-finger pocket. Later a right heel."
+        },
+        {
+          "id": "F4",
+          "along_m": 3.85,
+          "height_m": 1.2,
+          "type": "foot",
+          "notes": "Small edge on the kick-out where the wall goes to 45°."
+        },
+        {
+          "id": "C1",
+          "wall": "W16-cave",
+          "along_m": 0.9,
+          "height_m": 1.45,
+          "type": "foot",
+          "notes": "Foot hold on the side wall (W16-cave): right foot stems onto it."
+        },
+        {
+          "id": "H3",
+          "along_m": 3.8,
+          "height_m": 2.65,
+          "type": "crimp",
+          "size_m": [
+            0.09,
+            0.025,
+            0.03
+          ],
+          "notes": "Small three-finger crimp, 1.45 m out. The crux catch."
+        },
+        {
+          "id": "C2",
+          "wall": "W16-cave",
+          "along_m": 1.3,
+          "height_m": 2.0,
+          "type": "foot",
+          "size_m": [
+            0.08,
+            0.05,
+            0.05
+          ],
+          "notes": "Side-wall jib for the right toe hook that stops the swing."
+        },
+        {
+          "id": "H4",
+          "along_m": 4.5,
+          "height_m": 2.95,
+          "type": "crimp",
+          "facing": "right",
+          "grip": "sidepull",
+          "size_m": [
+            0.04,
+            0.12,
+            0.04
+          ],
+          "notes": "Crimp facing right, 1.75 m out: pull it as a sidepull."
+        },
+        {
+          "id": "F6",
+          "along_m": 3.95,
+          "height_m": 2.15,
+          "type": "foot",
+          "notes": "Roof foot edge 0.95 m out, for the left foot at the end."
+        },
+        {
+          "id": "T",
+          "along_m": 4.15,
+          "height_m": 3.3,
+          "type": "jug",
+          "role": "finish",
+          "notes": "Jug just under the lip, 2.1 m out. Match."
+        }
+      ],
+      "moves": [
+        {
+          "text": "Sit start matched on the S1 rail, feet on F1 and F2.",
+          "technique": [
+            "sit start"
+          ],
+          "LH": "S1",
+          "RH": "S1",
+          "LF": "F1",
+          "RF": "F2"
+        },
+        {
+          "text": "Right foot drops its knee on F3; slap your left hand to the H1 sloper pinch.",
+          "technique": [
+            "drop knee",
+            "sloper",
+            "pinch"
+          ],
+          "LH": "H1",
+          "RH": "S1",
+          "LF": "F1",
+          "RF": "F3"
+        },
+        {
+          "text": "Right hand to the two-finger pocket H2. Keep your hips low and tight to the wall.",
+          "technique": [
+            "pocket",
+            "lock-off"
+          ],
+          "LH": "H1",
+          "RH": "H2",
+          "LF": "F1",
+          "RF": "F3"
+        },
+        {
+          "text": "Left foot up to F4, then stem your right foot out onto C1 on the side wall.",
+          "technique": [
+            "stem",
+            "high feet"
+          ],
+          "LH": "H1",
+          "RH": "H2",
+          "LF": "F4",
+          "RF": "C1"
+        },
+        {
+          "text": "Crux: drive off the stem and deadpoint your left hand to the H3 crimp. Your feet cut loose; hold the swing on the crimp and the pocket.",
+          "technique": [
+            "deadpoint",
+            "cut loose",
+            "core"
+          ],
+          "LH": "H3",
+          "RH": "H2",
+          "LF": null,
+          "RF": null,
+          "dynamic": true
+        },
+        {
+          "text": "Stop the swing: right toe hooks C2 on the side wall, left toe goes back onto H1.",
+          "technique": [
+            "toe hook",
+            "foot catch"
+          ],
+          "LH": "H3",
+          "RH": "H2",
+          "LF": "H1",
+          "RF": "C2"
+        },
+        {
+          "text": "Pull on the toe hook and take your right hand to the H4 sidepull.",
+          "technique": [
+            "sidepull",
+            "toe hook"
+          ],
+          "LH": "H3",
+          "RH": "H4",
+          "LF": "H1",
+          "RF": "C2"
+        },
+        {
+          "text": "Drop the toe hook: right heel goes onto the old H2 pocket, left foot steps up to F6. Pull your hips up to the roof.",
+          "technique": [
+            "heel hook",
+            "high feet"
+          ],
+          "LH": "H3",
+          "RH": "H4",
+          "LF": "F6",
+          "RF": "H2"
+        },
+        {
+          "text": "Left hand to the lip jug T, then match.",
+          "technique": [
+            "match"
+          ],
+          "LH": "T",
+          "RH": "T",
+          "LF": "F6",
+          "RF": "H2"
+        }
+      ]
+    },
+    {
+      "id": "the-plank",
+      "name": "The Plank",
+      "grade": "V6",
+      "colour": "#b36bff",
+      "wall": "W4",
+      "where": "W4 back wall → bridge underside → W20",
+      "style": [
+        "roof",
+        "kneebar",
+        "lip turn",
+        "heel hook"
+      ],
+      "view": {
+        "position": [
+          9.6,
+          1.7,
+          7.2
+        ],
+        "look_at": [
+          7.7,
+          2.6,
+          8.0
+        ]
+      },
+      "rules": "Sit start at the back, hands on S1 and S2. Finish matched on T on the face above the east lip. No dabs: the roof is only 2.4 m up, so if a foot touches the mat you're off. Keep the walk-under clear while someone is on it.",
+      "notes": "Climbed like an outdoor roof. Start in the back, climb out along a diagonal flake line on the bridge's underside, rest in a no-hands kneebar, and keep your feet in the roof with a toe-hook bicycle. Turn the east lip with a heel hook and a mantle onto W20. The holds lead diagonally from the back corner to the lip, so the line reads at a glance. Crux: turning the lip, while pumped. Feet never cut, because hanging straight down would put them on the mat. UNCONFIRMED: assumes the underside of the bridge takes holds and a volume; the hold positions are suggestions.",
+      "holds": [
+        {
+          "id": "S1",
+          "wall": "W4",
+          "along_m": 1.0,
+          "height_m": 1.0,
+          "type": "crimp",
+          "role": "start",
+          "notes": "Incut rail low on the back wall. Start left hand."
+        },
+        {
+          "id": "S2",
+          "wall": "W4",
+          "along_m": 1.45,
+          "height_m": 1.05,
+          "type": "jug",
+          "role": "start",
+          "size_m": [
+            0.16,
+            0.09,
+            0.07
+          ],
+          "notes": "Flat jug. Start right hand."
+        },
+        {
+          "id": "F1",
+          "wall": "W4",
+          "along_m": 0.9,
+          "height_m": 0.3,
+          "type": "foot",
+          "notes": "Foot chip."
+        },
+        {
+          "id": "F2",
+          "wall": "W4",
+          "along_m": 1.6,
+          "height_m": 0.35,
+          "type": "foot",
+          "notes": "Foot chip."
+        },
+        {
+          "id": "B1",
+          "wall": "W4",
+          "along_m": 1.5,
+          "height_m": 1.75,
+          "type": "pocket",
+          "size_m": [
+            0.15,
+            0.05,
+            0.06
+          ],
+          "notes": "Deep horizontal slot: the first pull."
+        },
+        {
+          "id": "F3",
+          "wall": "W4",
+          "along_m": 0.95,
+          "height_m": 0.95,
+          "type": "foot",
+          "notes": "Foot edge."
+        },
+        {
+          "id": "F4",
+          "wall": "W4",
+          "along_m": 1.65,
+          "height_m": 1.0,
+          "type": "foot",
+          "notes": "Foot edge."
+        },
+        {
+          "id": "B2",
+          "wall": "W4",
+          "along_m": 1.35,
+          "height_m": 2.2,
+          "type": "jug",
+          "size_m": [
+            0.2,
+            0.08,
+            0.08
+          ],
+          "notes": "Jug in the break where the back wall meets the roof."
+        },
+        {
+          "id": "KF",
+          "wall": "W4",
+          "along_m": 0.95,
+          "height_m": 1.9,
+          "type": "foot",
+          "notes": "High foot for the kneebar: left toes push back into the wall."
+        },
+        {
+          "id": "F5",
+          "wall": "W4",
+          "along_m": 1.85,
+          "height_m": 1.55,
+          "type": "foot",
+          "notes": "Foot edge for the right foot during the kneebar."
+        },
+        {
+          "id": "K1",
+          "at": [
+            6.3,
+            8.85,
+            2.41
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "up": [
+            0.6,
+            -0.8
+          ],
+          "type": "volume",
+          "size_m": [
+            0.45,
+            0.4,
+            0.2
+          ],
+          "notes": "Kneebar volume on the roof, 0.35 m out from the back wall, point toward the wall."
+        },
+        {
+          "id": "KN",
+          "at": [
+            6.3,
+            8.92,
+            2.31
+          ],
+          "normal": [
+            0,
+            1,
+            -1
+          ],
+          "type": "spot",
+          "notes": "Where your left knee jams: the back facet of the K1 volume."
+        },
+        {
+          "id": "R1",
+          "at": [
+            6.85,
+            8.7,
+            2.41
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "up": [
+            0.6,
+            -0.8
+          ],
+          "type": "jug",
+          "size_m": [
+            0.18,
+            0.12,
+            0.1
+          ],
+          "notes": "First roof jug, 0.5 m out. Later both feet bicycle on it."
+        },
+        {
+          "id": "R2",
+          "at": [
+            6.7,
+            8.2,
+            2.41
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "up": [
+            0.6,
+            -0.8
+          ],
+          "type": "pinch",
+          "size_m": [
+            0.08,
+            0.26,
+            0.07
+          ],
+          "notes": "Start of the flake: a long flake pinch."
+        },
+        {
+          "id": "R3",
+          "at": [
+            7.25,
+            8.05,
+            2.41
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "up": [
+            0.6,
+            -0.8
+          ],
+          "type": "sloper",
+          "grip": "pinch",
+          "notes": "Slopey pinch on the flake line, 0.45 m from the lip."
+        },
+        {
+          "id": "R4",
+          "at": [
+            7.2,
+            7.55,
+            2.41
+          ],
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "up": [
+            0.6,
+            -0.8
+          ],
+          "type": "crimp",
+          "notes": "Incut crimp: the last roof hold before the lip."
+        },
+        {
+          "id": "L2",
+          "at": [
+            7.69,
+            8.3,
+            2.41
+          ],
+          "normal": [
+            1,
+            0,
+            -1
+          ],
+          "type": "arete",
+          "notes": "East lip of the bridge: right heel hooks over it here."
+        },
+        {
+          "id": "L1",
+          "at": [
+            7.69,
+            7.45,
+            2.41
+          ],
+          "normal": [
+            1,
+            0,
+            -1
+          ],
+          "type": "arete",
+          "notes": "The lip edge itself: left hand palms or slaps it to mantle."
+        },
+        {
+          "id": "J1",
+          "wall": "W20",
+          "along_m": 2.75,
+          "height_m": 2.7,
+          "type": "jug",
+          "size_m": [
+            0.16,
+            0.1,
+            0.08
+          ],
+          "notes": "Lip jug on W20, just over the edge: the classic roof exit hold."
+        },
+        {
+          "id": "T",
+          "wall": "W20",
+          "along_m": 2.55,
+          "height_m": 3.35,
+          "type": "jug",
+          "role": "finish",
+          "notes": "Finishing jug near the top of W20. Match."
+        }
+      ],
+      "moves": [
+        {
+          "text": "Sit start at the back: left hand on the S1 rail, right hand on the S2 jug, feet on F1 and F2.",
+          "technique": [
+            "sit start"
+          ],
+          "LH": "S1",
+          "RH": "S2",
+          "LF": "F1",
+          "RF": "F2"
+        },
+        {
+          "text": "Pull on and take the B1 slot with your right hand.",
+          "technique": [
+            "pull on"
+          ],
+          "LH": "S1",
+          "RH": "B1",
+          "LF": "F1",
+          "RF": "F2"
+        },
+        {
+          "text": "Walk your feet up to F3 and F4 and reach your left hand to the B2 jug in the break.",
+          "technique": [
+            "high feet"
+          ],
+          "LH": "B2",
+          "RH": "B1",
+          "LF": "F3",
+          "RF": "F4"
+        },
+        {
+          "text": "Right hand into the roof: the R1 jug. Your body tips back under the roof.",
+          "technique": [
+            "roof"
+          ],
+          "LH": "B2",
+          "RH": "R1",
+          "LF": "F3",
+          "RF": "F4"
+        },
+        {
+          "text": "Left toes up to KF, then jam your left knee into the K1 volume. Right foot to F5. Kneebar: let go and shake out.",
+          "technique": [
+            "kneebar",
+            "rest"
+          ],
+          "LH": "B2",
+          "RH": "R1",
+          "LF": "KF",
+          "RF": "F5",
+          "LK": "KN"
+        },
+        {
+          "text": "Locked in by the kneebar, reach your left hand out to the R2 flake.",
+          "technique": [
+            "pinch",
+            "kneebar"
+          ],
+          "LH": "R2",
+          "RH": "R1",
+          "LF": "KF",
+          "RF": "F5",
+          "LK": "KN"
+        },
+        {
+          "text": "Right hand out to the R3 pinch on the flake.",
+          "technique": [
+            "pinch"
+          ],
+          "LH": "R2",
+          "RH": "R3",
+          "LF": "KF",
+          "RF": "F5",
+          "LK": "KN"
+        },
+        {
+          "text": "Unlock the knee and bring both feet into the roof on R1: right toe hooks it, left toe presses it (a bicycle). Keep your core tight, or your feet swing down to the mat.",
+          "technique": [
+            "bicycle",
+            "toe hook",
+            "core"
+          ],
+          "LH": "R2",
+          "RH": "R3",
+          "LF": "R1",
+          "RF": "R1"
+        },
+        {
+          "text": "Left hand to the R4 crimp, the last hold before the lip.",
+          "technique": [
+            "crimp",
+            "lock-off"
+          ],
+          "LH": "R4",
+          "RH": "R3",
+          "LF": "R1",
+          "RF": "R1"
+        },
+        {
+          "text": "Right hand around the lip to the J1 jug on the face.",
+          "technique": [
+            "lip"
+          ],
+          "LH": "R4",
+          "RH": "J1",
+          "LF": "R1",
+          "RF": "R1"
+        },
+        {
+          "text": "Right heel hooks over the lip at L2, behind your right hand.",
+          "technique": [
+            "heel hook"
+          ],
+          "LH": "R4",
+          "RH": "J1",
+          "LF": "R1",
+          "RF": "L2"
+        },
+        {
+          "text": "Crux, turning the lip: your left hand slaps the lip edge at L1, your left foot drops, then pull on the heel and press down until your hips are over the edge.",
+          "technique": [
+            "heel hook",
+            "mantle",
+            "press"
+          ],
+          "LH": "L1",
+          "RH": "J1",
+          "LF": null,
+          "RF": "L2"
+        },
+        {
+          "text": "Rock over the heel and take your right hand up to the T jug.",
+          "technique": [
+            "rockover"
+          ],
+          "LH": "L1",
+          "RH": "T",
+          "LF": null,
+          "RF": "L2"
+        },
+        {
+          "text": "Match T.",
+          "technique": [
+            "match"
+          ],
+          "LH": "T",
+          "RH": "T",
+          "LF": null,
+          "RF": "L2"
+        }
+      ]
+    }
+  ]
+}

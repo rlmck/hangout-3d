@@ -1,0 +1,42 @@
+{
+  "_note": "v2 from the hand-drawn Floor.png (wall ids W1..W24 match Floor_labelled.png). Scale ASSUMED: bridge = 1 panel (2.4 m) wide; other lengths scaled from the drawing. Walls are 3 panels x 1.2 m = 3.6 m. Overhangs = 1 vertical panel + 2 overhanging panels; overhang angles are guesses. Units: metres, degrees. Each wall faces to the right of its from->to direction. Angle = degrees past vertical; positive = overhanging toward the climber, negative = slab.",
+  "wall_height_m": 3.6,
+  "panel_m": [2.4, 1.2],
+  "room": {"width_x": 12.6, "depth_y": 9.6, "ceiling_m": 4.6},
+  "walls": [
+    {"id": "W1",   "from": [0, 9.6],    "to": [3.6, 9.6],   "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "North wall, west part. Vertical"},
+    {"id": "W2",   "from": [3.6, 9.6],  "to": [4.6, 9.2],   "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "Angled corner, vertical"},
+    {"id": "W3",   "from": [4.6, 9.2],  "to": [5.3, 9.2],   "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "Short wall beside the bridge, vertical"},
+    {"id": "W4",   "from": [5.3, 9.2],  "to": [7.7, 9.2],   "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "Wall at the back of the bridge, vertical"},
+    {"id": "W5",   "from": [7.7, 9.2],  "to": [8.3, 9.2],   "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "UNCONFIRMED: assumed vertical (mirror of W3?)"},
+    {"id": "W6",   "from": [8.3, 9.2],  "to": [9.2, 9.6],   "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "UNCONFIRMED: assumed vertical (mirror of W2?)"},
+    {"id": "W7",   "from": [9.2, 9.6],  "to": [12.6, 9.6],  "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "North wall, east part. Vertical"},
+    {"id": "W8",   "from": [12.6, 9.6], "to": [12.6, 7.9],  "profile": [[1.2, 0], [1.2, 20], [1.2, 20]],  "notes": "East wall, north part. Overhang (angle guessed)"},
+    {"id": "W9",   "from": [12.6, 7.9], "to": [11.8, 7.9],  "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "UNCONFIRMED: side of the east recess, assumed vertical"},
+    {"id": "W10",  "from": [11.8, 7.9], "to": [11.8, 4.8],  "profile": [[1.2, 0], [1.2, 20], [1.2, 20]],  "notes": "East recess. Overhang (angle guessed)"},
+    {"id": "W11",  "from": [11.8, 4.8], "to": [12.6, 4.8],  "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "UNCONFIRMED: side of the east recess, assumed vertical"},
+    {"id": "W12",  "from": [12.6, 4.8], "to": [12.6, 2.4],  "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "East wall, south part. Vertical"},
+    {"id": "W13",  "from": [12.6, 2.4], "to": [10.6, 2.4],  "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "South-east wall, vertical. Mats end at its west end (line 14)"},
+    {"id": "W15",  "from": [5.3, 0],    "to": [0.5, 0],     "profile": [[1.2, 0], [1.2, 45], [1.2, 45]],  "notes": "Steep cave: 1 vertical panel, then 2 panels at 45 deg leaning out north (top reaches 2.4 m out)"},
+    {"id": "W16-cave", "from": [0.5, 0], "to": [0.5, 2.4], "profile": [[1.2, 0], [1.2, 0], [1.2, 0]], "notes": "UNCONFIRMED: west wall inside the cave (south of the slab), assumed vertical"},
+    {"id": "W16",  "from": [0.5, 2.4],  "to": [0.5, 6.5],   "profile": [[1.2, -7.9], [1.2, -7.9], [1.2, -7.9]], "notes": "Slab, from the cave's top edge up to the W17 corner. Angle chosen so its top lines up with W18 (0.5 m back); adjust if steeper/shallower"},
+    {"id": "W16-end", "from": [0.5, 2.4], "to": [0, 2.4], "clip_to": "W16", "profile": [[1.2, 0], [1.2, 0], [1.2, 0]], "notes": "Small triangle closing the step where the W16 slab leans back from the cave wall"},
+    {"id": "W17",  "from": [0.5, 6.5],  "to": [0, 6.5],     "clip_from": "W16", "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "Step at the top of the W16 slab; tapers to nothing at the top where the slab meets W18"},
+    {"id": "W18",  "from": [0, 6.5],    "to": [0, 9.6],     "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "West wall, north part. Vertical"},
+    {"id": "W19",  "from": [5.3, 9.2],  "to": [5.3, 5.1],   "base_m": 2.4, "profile": [[1.2, 0]],          "notes": "West side of the hanging bridge (2.4-3.6 m). Walk underneath to W20"},
+    {"id": "W20",  "from": [7.7, 5.1],  "to": [7.7, 9.2],   "base_m": 2.4, "profile": [[1.2, 0]],          "notes": "East side of the hanging bridge (2.4-3.6 m)"},
+    {"id": "W21",  "from": [7.7, 5.1],  "to": [5.3, 5.1],   "clip_from": "W23", "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "UNCONFIRMED: box face under the end of the bridge, assumed vertical"},
+    {"id": "W22",  "from": [5.3, 5.1],  "to": [5.3, 2.0],   "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "Box, west face. Vertical"},
+    {"id": "W22b", "from": [5.3, 2.0],  "to": [5.3, 0],     "base_m": 2.1, "profile": [[1.5, 0]],          "notes": "W22 carried on south to meet the cave line (W15), hanging 2.1-3.6 m: lower walk-under than the bridge (height guessed)"},
+    {"id": "W23",  "from": [7.7, 2.0],  "to": [7.7, 5.1],   "profile": [[1.2, -15], [1.2, -15], [1.2, -15]], "notes": "Box, east face. Slab (angle guessed). Plain plywood panels (no texture); arêtes are in"},
+    {"id": "W24",  "from": [5.3, 2.0],  "to": [7.7, 2.0],   "clip_to": "W23", "profile": [[1.2, 0], [1.2, 0], [1.2, 0]],    "notes": "UNCONFIRMED: box, south face, assumed vertical"}
+  ],
+  "blocks": [
+    {"id": "bridge",  "x": [5.31, 7.69], "y": [5.1, 9.19], "z": [2.41, 3.59], "notes": "Walled-off cuboid hanging 2.4-3.6 m; climb either side, walk underneath"},
+    {"id": "cave-arch", "x": [5.31, 5.6], "y": [0.0, 1.99], "z": [2.11, 3.59], "notes": "Low walk-under joining the box to the cave wall; clearance 2.1 m (keep above ~1.9 m or the viewer won't let you walk under)"},
+    {"id": "box-top", "x": [5.3, 6.73],  "y": [2.0, 5.1],  "z": [3.575, 3.595], "notes": "Top of the box (narrower than its base because the east face is a slab)"}
+  ],
+  "openings": [],
+  "volumes": {"count": 0, "seed": 7, "notes": "Random placeholder volumes, switched off (count 0)."},
+  "spawn": {"position": [3.0, 1.7, 4.5], "look_at": [6.5, 1.7, 7.0]}
+}

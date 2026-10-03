@@ -1,0 +1,100 @@
+# The Hangout: 3D model of a bouldering gym
+
+A schematic, walkable 3D model of The Hangout bouldering gym, built from the owner's hand-drawn floor plan
+and answers about each wall. It is a blockout, not a scan: good enough to walk around and reason about
+wall shapes, but lengths are scaled from a drawing and most angles are estimates.
+
+See `PROGRESS.md` for what has been built so far, the decisions behind it and the open questions.
+
+## Run it
+```
+pip install trimesh numpy     # once
+python serve.py               # http://127.0.0.1:8000/   (python serve.py 8080 for another port)
+```
+`serve.py` (stdlib only) serves the viewer, watches `hangout_layout.json`, reruns `build_model.py` on save
+and hot-reloads the model in the open page. Saving `problems.json` redraws the holds (no rebuild). Editing `index.html`/`viewer.js` reloads the page (pose kept).
+- Use the `127.0.0.1` URL, not `localhost`: another unrelated `python -m http.server` sometimes runs on this machine.
+- A server started from a Claude Code background task stops after 2 hours.
+
+## Published copy
+GitHub repo `rlmck/hangout-3d` (public) with GitHub Pages serving the repo root: https://rlmck.github.io/hangout-3d/
+Pushing to `main` redeploys it in about a minute. The page is static there: no `/events` (live reload only connects
+on 127.0.0.1/localhost), so rebuild the `.glb` locally and commit it along with the JSON.
+
+## Files
+| File | Role |
+|---|---|
+| `hangout_layout.json` | **Source of truth.** Edit this, never the mesh. |
+| `problems.json` | Boulder problems (holds + move-by-move beta). Drawn by the viewer, not baked into the GLB. |
+| `check_problems.py` | Checks problems.json: hold placement and reach per move. |
+| `build_model.py` | JSON -> `hangout_blockout.glb` (+ `.obj`/`.mtl`). trimesh + numpy. |
+| `index.html`, `viewer.js` | Three.js 0.170 first-person viewer (loaded from jsDelivr via an importmap; no build step). |
+| `serve.py` | Dev server + file watcher + Server-Sent Events (`/events`) for live reload. |
+| `Floor.png` | The owner's hand-drawn plan (north = up). |
+| `Floor_labelled.png` | Same plan with line numbers 1-24. **Wall ids W1..W24 match these numbers.** |
+| `Floor_understanding.png` | Early interpretation sketch, now out of date (ignore). |
+| `hangout_layout_v1_video_guess.json` | First layout, guessed from a phone video. Superseded. |
+
+## Coordinates and JSON schema
+- Plan coords: metres, `x` east, `y` north, `z` up. glTF/Three.js is y-up: plan `(x, y, z)` -> world `(x, z, -y)`.
+- Wall: `{id, from, to, profile, notes, base_m?, clip_from?, clip_to?}`.
+  - The climbing face is on the **right** of `from -> to` (outer walls run clockwise, the box runs anticlockwise).
+  - `profile`: stacked panels `[rise_m, angle_deg]` from the bottom up. Angle is past vertical:
+    **positive = overhang** (leans toward the climber), **negative = slab**. Rises are scaled to fill
+    `wall_height_m - base_m`.
+  - `base_m`: the face starts above the floor (bridge sides at 2.4 m, the low walk-under W22b at 2.1 m).
+  - `clip_from` / `clip_to: "<wall id>"`: slide that end along the wall so it follows another wall's sloping
+    face at every height (used where box sides meet the W23 slab, and W17 / W16-end meet the W16 slab).
+- `blocks`: solid boxes `{id, x:[..], y:[..], z:[..], notes}` (the bridge body, the cave-arch, the box top).
+- `spawn.position` / `look_at` are `[plan x, height, plan y]`.
+- `volumes.count` is 0: random placeholder volumes are switched off on purpose.
+- Gym constants from the owner: panels are **2.4 m wide x 1.2 m tall** (landscape); every wall is
+  **3 panels = 3.6 m**; overhangs are 1 vertical panel then 2 overhanging panels.
+
+## Build details worth knowing
+- Each wall panel is split into separate meshes at colour-band heights (black < 1.1 m, pink < 2.1 m, white)
+  and at panel joints. Mesh names are `<wallId>_p<panelIndex>_<z>`, `<wallId>_cap`, `<wallId>_end0/1`,
+  `block_<id>`. The viewer maps meshes back to JSON by these prefixes, so **wall ids must not contain `_`**.
+- Overhangs (positive offset) get a top cap and triangular end panels closing the solid wedge behind the face.
+  Slabs get neither, because the wedge in front of a slab is open air.
+- Materials are exported with `metallicFactor=0` (glTF defaults to fully metallic otherwise).
+
+## Problems (`problems.json`)
+- Problem: `{id, name, grade, colour, wall, style[], rules, notes, holds[], moves[]}`.
+- Hold: `{id, along_m, height_m, type, role?, facing?, grip?, size_m?, notes, wall?}`. `along_m` runs from the wall's
+  `from` end (the climber's left), `height_m` is height above the floor; the viewer puts it on the sloping face.
+  Off-wall holds (e.g. the bridge end) use `at: [plan x, plan y, height]` + `normal: [nx, ny]` instead.
+- Types: jug, crimp, sloper, pinch, pocket, foot, volume (`size_m [w, h, depth]`, triangle point down),
+  `arete` and `spot` (body positions with no hold; an arete with a `role` gets a tape mark).
+  `facing` = the way the gripping edge points.
+- Move: `{text, technique[], LH, RH, LF, RF, LK?, RK?, dynamic?}` = the body position **after** the move (hold id,
+  or null when flagging; LK/RK = knee for a kneebar). Move 0 is the start. Hold ids only need to be unique within a problem.
+- Off-wall holds: `normal` may be 3D `[nx, ny, nz]`; on a roof (normal down) `up: [ux, uy]` is the direction of travel.
+  Optional problem fields: `where` (shown instead of `wall`), `view: {position, look_at}` for `G` (like `spawn`).
+- **Run `python check_problems.py` after editing problems.** It checks hold ids, holds inside blocks or off a
+  wall, and reach for a 1.75 m climber: one limb moving at most 1.5 m (hands) or 1.3 m (feet), x1.25 if `dynamic`;
+  spans of at most 1.7 m between hands, 2.1 m hand to foot and 1.5 m between feet; knee 0.3-0.6 m from the same foot.
+- House rules (`house_rules` in the JSON): arêtes, side walls and volumes are always in. W23 panels are plain
+  plywood (no smearing on the wall). Assume a full range of holds.
+- Low roofs (the bridge underside is 2.4 m up): feet must stay in the roof, because hanging straight down puts them on the mat.
+
+## Viewer behaviour
+- Phones/tablets (`pointer: coarse`, or `?touch` in the URL to test on a desktop): an on-screen stick to walk,
+  drag to look, tap to pick, a Map button, and the problem card at the top with a dropdown and Prev/Next.
+  Portrait screens get a 90° vertical FOV.
+- WASD/arrows + Shift, mouse-look with pointer lock, eye height 1.7 m, `R` respawn, `P` top-down plan view
+  (wall labels, pink = base line, orange = overhang footprint), click pins the info panel.
+- Problems: `N` cycles problems (then none), `[` / `]` step through the moves, `G` stands you in front of the
+  problem. The selected problem shows `S`/`TOP` and LH/RH/LF/RF markers (bigger = the limb that just moved);
+  other problems dim. Hovering a hold shows its type, position and which moves use it.
+- Hover info shows the wall id, notes, and a panel table (height range, angle, slab/vertical/overhang).
+- Collision: radial raycasts (radius 0.3 m) at heights 0.25, 0.9, 1.5 and 1.85 m. Anything hanging higher than
+  ~1.9 m can be walked under, which is why the bridge (2.4 m) and the cave walk-under (2.1 m) work.
+- `window.viewer` exposes `player`, `move`, `collides`, `pickFirstPerson`, `setPlanMode`, `spawn`, `selectProblem`, `setStep`, `goToProblem`, … for
+  testing from devtools or browser automation (a hidden tab does not run `requestAnimationFrame`, so call
+  `move(dt)` directly).
+
+## Working with the owner
+- They are at or near the gym and answer questions about walls by line number; ask rather than guess.
+- When something is assumed, put `UNCONFIRMED` in that wall's `notes` so it shows on hover.
+- After a change, rebuild and look at it in the viewer before reporting back.
