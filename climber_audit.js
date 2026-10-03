@@ -69,3 +69,17 @@ export function show(pi, step, pos, look) {
     v.player.pitch = Math.atan2(d.y, Math.hypot(d.x, d.z));
   }
 }
+
+// Screen rectangle around the climber (for a zoomed screenshot), after show().
+export function rect(pad = 60) {
+  const v = window.viewer, c = v.climber(), cam = v.camera;
+  cam.position.copy(v.player.pos);
+  cam.rotation.set(v.player.pitch, v.player.yaw, 0);
+  cam.updateMatrixWorld();
+  const pts = [c.body.S, c.body.P, ...Object.values(c.dbg).flatMap((d) => [d.root, d.mid, d.end])];
+  const xs = [], ys = [];
+  for (const p of pts) { const q = p.clone().project(cam); xs.push((q.x + 1) / 2 * innerWidth); ys.push((1 - q.y) / 2 * innerHeight); }
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const half = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) / 2 + pad;
+  return [cx - half, cy - half, cx + half, cy + half].map(Math.round);
+}

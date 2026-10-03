@@ -103,8 +103,11 @@ on 127.0.0.1/localhost), so rebuild the `.glb` locally and commit it along with 
 - The selected problem is acted out by a mannequin (`climber.js`, see its header comment). Hands lie flat on the hold
   with fingers along the hold's `facing`; shoes are placed by the move's per-limb `style` (edge / smear / drop-knee /
   heel / toe-hook / toe-press; a null foot flags, both null hang). The torso (pelvis + spine direction) minimises a
-  smooth energy each frame: arm and leg reach, hips/chest distance off the wall, hips over the weighted foot (after a
-  rockover/high-step the foot that moved takes the weight), spine leaning from feet to hands. Elbows and knees use
+  smooth energy each frame: gravity (the body sinks until arms straighten or legs take the weight), the floor (a
+  `sit start` sits on the mat, knees up, leaning in), arm and leg reach, staying in front of every touched surface,
+  a little hip tension toward the wall, hips over the weighted foot (after a rockover/high-step the foot that moved
+  takes the weight), a heel hook pulling the hips up to it, spine leaning from feet to hands. A free foot flags
+  sideways on vertical/slab and dangles on steep ground. Elbows and knees use
   soft two-bone IK that never bends into the wall. Anti-jitter: a temporal anchor plus speed caps on the torso, the
   bend direction and the elbows/knees (all per second, so 30 fps phones match 60 fps).
 - **Check the climber after changing it:** in the browser console, `const a = await import('./climber_audit.js')`,

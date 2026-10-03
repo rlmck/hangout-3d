@@ -3,9 +3,9 @@
 //   down for an undercling), wrist on the other side.
 // - Shoes are placed by technique: edging (toe on, foot turned out on its inside edge), smearing, drop-knee (outside
 //   edge, toes turned in), heel hook, toe hook, toe press; a missing foot flags out to the side.
-// - The torso is solved each frame so the arms and legs can reach: shoulders and hips are kept a hand's width off the
-//   wall, shoulders above hips unless on a roof, hips turned for drop-knees and laybacks, shoulders shrugged on long
-//   reaches. Elbows and knees come from two-bone IK with a pole set by the grip (elbows down for a pull, out for a
+// - The torso is solved each frame (see _setup/_energy): gravity, the floor (sit starts sit), reach, staying in front
+//   of the surfaces being climbed, weight over the stance foot, heel hooks pulling the hips up; hips turned for
+//   drop-knees and laybacks, shoulders shrugged on long reaches. Elbows and knees come from two-bone IK with a pole set by the grip (elbows down for a pull, out for a
 //   gaston, up for a palm press; knees out like a frog, down and in for a drop-knee, sideways for a heel hook).
 // Next/Prev move each changing limb along an arc off the wall with a fading dotted trail; the body follows.
 import * as THREE from 'three';
@@ -127,6 +127,7 @@ export class Climber {
 
   _targets(i) {
     const m = this.p.moves[i], styles = this._styleFor(i), poses = {};
+    this.stepIndex = i;
     const frames = LIMBS.map((l) => m[l] && this.p._holds.get(m[l])).filter(Boolean).map((h) => this.frame(h)).filter(Boolean);
     const n = unit(avg(frames.map((f) => f.z.clone())), new V3(0, 0, 1));
     // the climber's right: along the wall (holds' x); eased toward in update() so the body turns smoothly between walls
@@ -211,9 +212,17 @@ export class Climber {
   _flag(l, body) {  // a foot with no hold: hang (both off) or flag out to the side against the wall
     const J = body.joint[l], n = body.n, out = body.r.clone().multiplyScalar(side(l));
     const both = !this.cur.LF && !this.cur.RF;
-    const E = J.clone().addScaledVector(DOWN, both ? 0.8 : 0.66).addScaledVector(out, both ? 0.05 : 0.42);
-    if (!both) E.addScaledVector(n, 0.12 - E.clone().sub(body.O).dot(n));
-    const d = unit(DOWN.clone().multiplyScalar(both ? 0.8 : 0.3).addScaledVector(out, both ? 0.1 : 0.6).addScaledVector(n, -0.2));
+    // on steep ground or under a roof a free leg dangles, knee soft; on a vertical wall or slab it flags out sideways
+    const dangle = both || n.y < -0.25;
+    const E = dangle ? J.clone().addScaledVector(DOWN, both ? 0.8 : 0.62).addScaledVector(out, 0.08).addScaledVector(n, both ? 0 : 0.12)
+      : J.clone().addScaledVector(DOWN, 0.66).addScaledVector(out, 0.42);
+    for (const q of Object.values(this.cur)) {  // keep the foot in front of every surface the climber is on
+      if (!q) continue;
+      const d = E.clone().sub(q.C).dot(q.n);
+      if (d < 0.08) E.addScaledVector(q.n, 0.08 - d);
+    }
+    E.y = Math.max(E.y, 0.08);
+    const d = unit(DOWN.clone().multiplyScalar(dangle ? 0.8 : 0.3).addScaledVector(out, dangle ? 0.1 : 0.6).addScaledVector(n, -0.2));
     const s = unit(perp(n.clone(), d), UP);
     return { kind: 'F', C: E.clone(), n: n.clone(), d, s, heel: E.clone().addScaledVector(d, -0.06).addScaledVector(s, -0.07),
       toe: E.clone().addScaledVector(d, 0.19).addScaledVector(s, -0.07), E, mode: 'flag' };
@@ -293,15 +302,20 @@ export class Climber {
     const H = hands.length ? avg(hands.map((l) => cur[l].E.clone())) : null;
     const F = feet.length ? avg(feet.map((l) => cur[l].E.clone())) : null;
     const hf = H && F ? unit(H.clone().sub(F)) : null;
+    // sit start: bottom on the mat, knees bent up, leaning in toward the hands
+    const sit = (this.p.moves[this.stepIndex]?.technique || []).includes('sit start');
     const want = roof ? (hf ? hf.clone() : UP.clone()) : UP.clone().addScaledVector(hf || UP, 0.8);
+    if (sit) want.addScaledVector(n, -0.9);
     unit(want);
     const heavy = feet.find((l) => (this.weight?.[l] || 1) > 1);
     const base = heavy ? cur[heavy].E.clone()  // where the weight goes
       : F && H ? F.clone().lerp(H, steep || roof ? 0.45 : 0.2) : (F || H).clone();
     return {
-      n, roof, slab, steep, hands, feet, knees, H, F, want, base,
+      n, roof, slab, steep, hands, feet, knees, H, F, want, base, sit,
+      heel: feet.some((l) => cur[l].mode === 'heel'),  // a heel hook pulls the hips up to it; the body may lie flat
       O: avg(have.map((l) => cur[l].C.clone())),  // a point on the wall near the climber
-      hipOff: roof ? 0.42 : slab ? 0.32 : steep ? 0.24 : 0.22, chestOff: roof ? 0.4 : slab ? 0.3 : 0.26,
+      planes: have.map((l) => [cur[l].C, cur[l].n]),  // every surface touched: the body stays in front of all of them
+      hipOff: roof ? 0.45 : slab ? 0.35 : steep ? 0.25 : 0.3, hipPull: steep ? 3 : roof ? 1 : 1.5,
       balance: steep || roof ? 1 : heavy ? 6 : 4,
       // temporal anchor: the torso eases toward its best position over a few frames instead of jumping there
       prev: this.body && this.settled ? { P: this.body.P.clone(), u: this.body.u.clone() } : null,
@@ -316,24 +330,32 @@ export class Climber {
     unit(r, this._side).applyAxisAngle(u, this.twist);
     const sq = (v) => v * v, J = this._J, cur = this.cur;
     let e = sq(ql - 1);
-    for (const l of c.hands) {  // arms: comfortable from bent to nearly straight, never over-reaching
+    for (const l of c.hands) {  // arms: hang straight unless something holds the body up; never over-reach
       const d = J.copy(S).addScaledVector(r, side(l) * B.shoulder).distanceTo(cur[l].E);
-      e += 2 * sq(Math.max(0, d - 0.5)) + 1 * sq(Math.max(0, 0.32 - d)) + 300 * sq(Math.max(0, d - ARM + 0.01)) + 80 * sq(Math.max(0, 0.2 - d));
+      e += 0.5 * sq(d - 0.5) + 300 * sq(Math.max(0, d - ARM + 0.01)) + 80 * sq(Math.max(0, 0.2 - d));
     }
     for (const l of c.feet) {  // legs: a stance leg is bent (~0.6-0.68 m hip to ankle); a trailing leg may straighten
       const w = this.weight?.[l] || 1, d = J.copy(P).addScaledVector(r, side(l) * B.hip).distanceTo(cur[l].E);
-      e += w * (1.5 * sq(d - (w > 1 ? 0.6 : 0.68)) + 3 * sq(Math.max(0, 0.45 - d)) + 3 * sq(Math.max(0, d - 0.8)))
-        + 300 * sq(Math.max(0, d - LEG + 0.03)) + 150 * sq(Math.max(0, 0.3 - d));
+      const heel = cur[l].mode === 'heel', pref = c.sit ? 0.45 : heel ? 0.42 : w > 1 ? 0.6 : 0.68;
+      e += (heel ? 2.5 : w) * (4 * sq(d - pref) + 6 * sq(Math.max(0, (c.sit || heel ? 0.3 : 0.42) - d)))
+        + 300 * sq(Math.max(0, d - LEG + 0.03)) + 150 * sq(Math.max(0, 0.28 - d));
     }
     for (const l of c.knees) {
       const d = J.copy(P).addScaledVector(r, side(l) * B.hip).distanceTo(cur[l].E);
       e += 300 * sq(d - B.thigh);
     }
-    const hip = J.copy(P).sub(c.O).dot(c.n), chest = this._J2.copy(S).sub(c.O).dot(c.n);
-    e += 4 * sq(hip - c.hipOff) + 200 * sq(Math.max(0, 0.13 - hip));
-    e += 3 * sq(chest - c.chestOff) + 200 * sq(Math.max(0, 0.15 - chest));
+    // gravity: the body sinks as low as the arms and legs let it (hips carry most of the mass)
+    e += (c.sit ? 3 : 0.6) * (P.y + 0.6 * S.y);
+    // the floor: sit, don't sink (a sit start ends up sitting on the mat)
+    e += 200 * sq(Math.max(0, 0.16 - P.y)) + 200 * sq(Math.max(0, 0.35 - S.y));
+    // in front of every surface the hands and feet are on, and a little tension holding the hips in
+    for (const [C, nn] of c.planes) {
+      e += 200 * sq(Math.max(0, 0.14 - J.copy(P).sub(C).dot(nn))) + 200 * sq(Math.max(0, 0.16 - this._J2.copy(S).sub(C).dot(nn)));
+    }
+    const hip = J.copy(P).sub(c.O).dot(c.n);
+    e += c.hipPull * sq(Math.max(0, hip - c.hipOff));
     e += c.balance * sq(J.copy(P).sub(c.base).dot(r));  // hips over the feet, side to side
-    e += 1.5 * u.distanceToSquared(c.want);
+    e += (c.heel ? 0.3 : 1.5) * u.distanceToSquared(c.want);
     if (c.prev) e += 25 * P.distanceToSquared(c.prev.P) + 6 * u.distanceToSquared(c.prev.u);
     return e;
   }
