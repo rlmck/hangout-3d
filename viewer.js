@@ -314,6 +314,13 @@ function applySelection() {
 }
 
 let listOpen = !TOUCH;  // "Rules and all moves": open by default on desktop, collapsed on phones
+let cardMin = false;  // card folded down to the dropdown and prev/next (remembered per browser)
+try { cardMin = localStorage.getItem('hangout.cardMin') === '1'; } catch {}
+function setCardMin(on) {
+  cardMin = on;
+  try { localStorage.setItem('hangout.cardMin', on ? '1' : '0'); } catch {}
+  updateProblemUI();
+}
 function updateProblemUI() {
   const el = $('problem'), p = problems[sel];
   el.style.display = problems.length ? 'block' : 'none';
@@ -322,19 +329,22 @@ function updateProblemUI() {
     ? `<div class="tags">${(m.dynamic ? ['dynamic', ...m.technique] : m.technique).map((t) => `<span>${esc(t)}</span>`).join('')}</div>` : '';
   const pick = '<div class="pbar"><select data-act="pick" aria-label="Problem"><option value="-1">Choose a problem…</option>' +
     problems.map((q, i) => `<option value="${i}"${i === sel ? ' selected' : ''}>${esc(q.name)} · ${esc(q.grade)} · ${esc(q.wall)}</option>`).join('') +
-    '</select>' + (p ? '<button class="btn" data-act="go">View</button>' : '') + '</div>';
+    '</select>' + (p ? '<button class="btn" data-act="go">View</button>' : '') +
+    `<button class="btn fold" data-act="fold" aria-label="${cardMin ? 'Show details' : 'Hide details'}">${cardMin ? '▾' : '▴'}</button></div>`;
+  const last = p ? p.moves.length - 1 : 0, mnum = step ? `Move ${step} of ${last}` : 'Start';
+  const nav = (short) => `<div class="nav"><button class="btn" data-act="prev"${step ? '' : ' disabled'}>${short ? '◀' : '◀ Prev'}</button>` +
+    (short ? `<span class="mnum">${mnum}</span>` : '') + `<button class="btn" data-act="next"${step < last ? '' : ' disabled'}>${short ? '▶' : 'Next ▶'}</button></div>`;
+  if (cardMin) { el.innerHTML = pick + (p ? nav(true) : ''); return; }
   if (!p) {
-    el.innerHTML = pick + problems.map((q, i) =>
-      `<div class="prow" data-problem="${i}">${sw(q.colour)}${esc(q.name)} <b>${esc(q.grade)}</b> <span class="dim">${esc(q.where || q.wall)}</span></div>`).join('') +
+    el.innerHTML = pick + (TOUCH ? '' : problems.map((q, i) =>
+      `<div class="prow" data-problem="${i}">${sw(q.colour)}${esc(q.name)} <b>${esc(q.grade)}</b> <span class="dim">${esc(q.where || q.wall)}</span></div>`).join('')) +
       (houseRules ? `<div class="foot">${esc(houseRules)}</div>` : '') + (TOUCH ? '' : '<div class="foot"><kbd>N</kbd> pick a problem</div>');
     return;
   }
-  const m = p.moves[step], last = p.moves.length - 1;
+  const m = p.moves[step];
   el.innerHTML = pick + `<h2>${sw(p.colour)}${esc(p.name)} <span class="grade">${esc(p.grade)}</span></h2>` +
     `<div class="dim">${esc(p.where || p.wall)} · ${esc((p.style || []).join(', '))}</div>` +
-    `<div class="cur"><div class="mnum">${step ? `Move ${step} of ${last}` : 'Start'}</div>${esc(m.text)}${tags(m)}</div>` +
-    `<div class="nav"><button class="btn" data-act="prev"${step ? '' : ' disabled'}>◀ Prev</button>` +
-    `<button class="btn" data-act="next"${step < last ? '' : ' disabled'}>Next ▶</button></div>` +
+    `<div class="cur"><div class="mnum">${mnum}</div>${esc(m.text)}${tags(m)}</div>` + nav(false) +
     `<details class="more"${listOpen ? ' open' : ''}><summary>Rules and all moves</summary>` +
     `<div class="rules">${esc(p.rules)}${houseRules ? ` <span class="dim">${esc(houseRules)}</span>` : ''}</div>` +
     (p.notes ? `<details><summary>Setter's notes</summary>${esc(p.notes)}</details>` : '') +
@@ -600,6 +610,7 @@ $('problem').addEventListener('click', (e) => {  // touch, or the mouse in plan 
   if (act === 'prev') setStep(step - 1);
   else if (act === 'next') setStep(step + 1);
   else if (act === 'go') goToProblem();
+  else if (act === 'fold') setCardMin(!cardMin);
   else if (s) setStep(+s.dataset.step);
   else if (q) { selectProblem(+q.dataset.problem); goToProblem(); }
 });
@@ -636,8 +647,8 @@ stick($('joy'), joy);
 stick($('aim'), aim);
 function turn(dt) {  // look stick: squared response so small tilts aim finely
   const k = STICK_TURN * dt, c = (v) => Math.sign(v) * v * v;
-  player.yaw -= c(aim.x) * k;
-  player.pitch = THREE.MathUtils.clamp(player.pitch - c(aim.y) * k * 0.7, -1.5, 1.5);
+  player.yaw += c(aim.x) * k;  // inverted on purpose (owner's preference): push right turns left, push up looks down
+  player.pitch = THREE.MathUtils.clamp(player.pitch + c(aim.y) * k * 0.7, -1.5, 1.5);
 }
 
 let drag = null;

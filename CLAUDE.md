@@ -83,7 +83,10 @@ on 127.0.0.1/localhost), so rebuild the `.glb` locally and commit it along with 
   reports a fine primary pointer and used to get the desktop pointer-lock overlay), then follows the last input:
   a finger switches to touch mode, a mouse back to desktop. `?touch` forces it on a desktop for testing.
 - Touch mode: twin sticks like a mobile
-  shooter (left walks, right looks, squared response), dragging the screen also looks (finger right = look right).
+  shooter (left walks, right looks, squared response). The look stick is **inverted on purpose** (owner's choice:
+  push right turns left, push up looks down); dragging the screen is not (finger right = look right).
+  The problem card folds down (▴/▾) to the dropdown plus ◀ Move n ▶; the fold is remembered in localStorage,
+  and on phones the card doesn't repeat the problem list (the dropdown has it).
   No wall info, no plan view. Tapping a hold opens its problem (camera goes there, beta from the start); tapping a
   hold of the open problem jumps to the move that first uses it. The problem card sits at the top with a dropdown
   and Prev/Next. Portrait screens get a 90° vertical FOV. A hidden tab runs no frames: test sticks with
