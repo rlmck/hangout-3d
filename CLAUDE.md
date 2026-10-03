@@ -79,9 +79,13 @@ on 127.0.0.1/localhost), so rebuild the `.glb` locally and commit it along with 
 - Low roofs (the bridge underside is 2.4 m up): feet must stay in the roof, because hanging straight down puts them on the mat.
 
 ## Viewer behaviour
-- Touch mode starts on any touchscreen (`any-pointer: coarse` or `maxTouchPoints > 1`; an iPad with a trackpad
-  reports a fine primary pointer and used to get the desktop pointer-lock overlay), then follows the last input:
-  a finger switches to touch mode, a mouse back to desktop. `?touch` forces it on a desktop for testing.
+- **Phones and computers get the same app** (`body.app`): problem card centred at the top, the climber, drag to look
+  (inverted on purpose), tap/click a hold to open its problem, no wall info, no plan view. Computers also walk with
+  WASD/arrows and have `[` `]` `N` `G` `R`. The only difference is the joysticks (`body.touch`), shown on any
+  touchscreen (`any-pointer: coarse` or `maxTouchPoints > 1`) and then following the last input (finger shows them,
+  mouse hides them). `?touch` forces the sticks on a desktop for testing.
+- **`?dev`** restores the old desktop tools for editing walls: "Click to walk" pointer lock, mouse look, hover/click
+  wall info, plan view (`P`), the help bar and the full move list.
 - Touch mode: twin sticks like a mobile
   shooter (left walks, right looks, squared response). The look stick is normal (push right turns right, push up
   looks up); dragging the screen is **inverted on purpose** (owner's choice: drag the scene, finger right looks left).

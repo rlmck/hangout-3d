@@ -9,13 +9,15 @@ const EYE = 1.7, RADIUS = 0.3, WALK = 2.5, RUN = 5.0, LOOK = 0.0022;
 const BODY_HEIGHTS = [0.25, 0.9, 1.5, 1.85];  // collision ray heights above the floor
 const world = (x, y, h = 0) => new THREE.Vector3(x, h, -y);
 const $ = (id) => document.getElementById(id);
-// Phones and tablets: twin sticks like a mobile shooter (left walks, right looks), drag also looks,
-// tapping a hold opens its problem (?touch forces this on a desktop for testing)
-// Start in touch mode on anything with a touchscreen (an iPad with a trackpad reports a "fine" primary pointer);
-// after that the last kind of input wins: a finger switches to touch mode, a mouse back to desktop mode.
-const FORCE_TOUCH = new URLSearchParams(location.search).has('touch');
-let TOUCH = FORCE_TOUCH || matchMedia('(any-pointer: coarse)').matches || navigator.maxTouchPoints > 1;
+// One app for phones and computers: same card, climber and taps; the only difference is the on-screen joysticks,
+// shown on touchscreens (an iPad with a trackpad reports a "fine" primary pointer, so check for any touch).
+// After that the last kind of input wins: a finger shows the sticks, a mouse hides them.
+// ?dev brings back the wall-editing tools: pointer-lock walking, wall info on hover, plan view (P).
+const params = new URLSearchParams(location.search);
+const DEV = params.has('dev'), FORCE_TOUCH = params.has('touch');
+let TOUCH = !DEV && (FORCE_TOUCH || matchMedia('(any-pointer: coarse)').matches || navigator.maxTouchPoints > 1);
 const TOUCH_LOOK = 0.005, STICK_TURN = 2.4;  // drag: radians per pixel; look stick: radians per second at full tilt
+document.body.classList.toggle('app', !DEV);
 document.body.classList.toggle('touch', TOUCH);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -297,7 +299,7 @@ function applySelection() {
     const f = frames.get(h);
     if (!h.role || !f) continue;
     const [, sh, sd] = holdSize(h), up = h.role === 'start' ? -1 : 1;
-    const t = textSprite(h.role === 'start' ? 'S' : 'TOP', p.colour, 0.07 * (TOUCH ? 1.6 : 1));
+    const t = textSprite(h.role === 'start' ? 'S' : 'TOP', p.colour, 0.07 * (DEV ? 1 : 1.6));
     t.position.copy(f.pos).addScaledVector(f.y, up * (Math.max(0.08, sh / 2) + 0.06)).addScaledVector(f.z, sd + 0.05);
     markerGroup.add(t);
   }
@@ -451,7 +453,7 @@ function climbTo(i) {
     const arcN = from.n.clone().add(dest.n).normalize();
     const curve = (e) => from.pos.clone().lerp(dest.pos, e).addScaledVector(arcN, Math.sin(Math.PI * e) * lift);
     const trail = new THREE.Points(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 16 }, (_, j) => curve(j / 15))),
-      new THREE.PointsMaterial({ map: c.dot, color: LIMB_COLOUR[l], size: TOUCH ? 9 : 7, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false }));
+      new THREE.PointsMaterial({ map: c.dot, color: LIMB_COLOUR[l], size: DEV ? 7 : 9, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false }));
     c.group.add(trail);
     c.trails.push({ obj: trail, start, end: start + dur });
     return { l, from, dest, to, curve, start, dur, done: false, live: null };
@@ -493,7 +495,7 @@ function drawClimber() {
   });
   for (const [k, m] of c.joints) { m.position.copy(pt[k]); m.scale.setScalar(k.endsWith('kn') ? 0.045 : 0.036); }
   c.head.position.copy(pt.head);
-  const k = TOUCH ? 1.35 : 1;
+  const k = DEV ? 1 : 1.35;
   for (const l of LIMBS) {
     const sp = c.icons[l], q = c.cur[l], moving = c.anims.some((a) => a.l === l && !a.done && c.t >= a.start);
     sp.visible = !!q;
@@ -506,7 +508,7 @@ function drawClimber() {
   }
 }
 
-let listOpen = !TOUCH;  // "Rules and all moves": open by default on desktop, collapsed on phones
+let listOpen = DEV;  // "Rules and all moves": collapsed, except in the ?dev tools
 let cardMin = false;  // card folded down to the dropdown and prev/next (remembered per browser)
 try { cardMin = localStorage.getItem('hangout.cardMin') === '1'; } catch {}
 function setCardMin(on) {
@@ -529,9 +531,9 @@ function updateProblemUI() {
     (short ? `<span class="mnum">${mnum}</span>` : '') + `<button class="btn" data-act="next"${step < last ? '' : ' disabled'}>${short ? '▶' : 'Next ▶'}</button></div>`;
   if (cardMin) { el.innerHTML = pick + (p ? nav(true) : ''); return; }
   if (!p) {
-    el.innerHTML = pick + (TOUCH ? '' : problems.map((q, i) =>
+    el.innerHTML = pick + (!DEV ? '' : problems.map((q, i) =>
       `<div class="prow" data-problem="${i}">${sw(q.colour)}${esc(q.name)} <b>${esc(q.grade)}</b> <span class="dim">${esc(q.where || q.wall)}</span></div>`).join('')) +
-      (houseRules ? `<div class="foot">${esc(houseRules)}</div>` : '') + (TOUCH ? '' : '<div class="foot"><kbd>N</kbd> pick a problem</div>');
+      (houseRules ? `<div class="foot">${esc(houseRules)}</div>` : '') + (!DEV ? '' : '<div class="foot"><kbd>N</kbd> pick a problem</div>');
     return;
   }
   const m = p.moves[step];
@@ -542,7 +544,7 @@ function updateProblemUI() {
     `<div class="rules">${esc(p.rules)}${houseRules ? ` <span class="dim">${esc(houseRules)}</span>` : ''}</div>` +
     (p.notes ? `<details><summary>Setter's notes</summary>${esc(p.notes)}</details>` : '') +
     '<ol start="0">' + p.moves.map((q, i) => `<li data-step="${i}" class="${i === step ? 'on' : ''}">${esc(q.text)}${tags(q)}</li>`).join('') + '</ol></details>' +
-    (TOUCH ? '' : '<div class="foot"><kbd>[</kbd> <kbd>]</kbd> step moves · <kbd>G</kbd> go there · <kbd>N</kbd> next problem</div>');
+    (!DEV ? '' : '<div class="foot"><kbd>[</kbd> <kbd>]</kbd> step moves · <kbd>G</kbd> go there · <kbd>N</kbd> next problem</div>');
   el.querySelector('details.more').addEventListener('toggle', (e) => { listOpen = e.target.open; });
   if (listOpen) el.querySelector('li.on')?.scrollIntoView({ block: 'nearest' });
 }
@@ -554,7 +556,7 @@ function goToProblem() {
     const { position: a, look_at: t } = p.view;  // [plan x, height, plan y], like spawn
     player.pos.copy(world(a[0], a[2], EYE));
     lookAt(world(t[0], t[2], t[1]));
-    if (TOUCH) player.pitch += 0.12;  // the problem card covers the top of a phone screen: put the climb lower
+    if (!DEV) player.pitch += 0.12;  // the problem card covers the top of the screen: put the climb lower
     return;
   }
   const pts = w ? p.holds.filter((h) => !h.at && (h.wall || p.wall) === p.wall && frames.has(h)).map((h) => frames.get(h).pos) : [];
@@ -564,8 +566,8 @@ function goToProblem() {
   const reach = Math.max(...pts.map((q) => q.clone().sub(base).dot(out)));  // furthest hold out from the base (roofs)
   player.pos.set(c.x, EYE, c.z).addScaledVector(out, reach - c.clone().sub(base).dot(out) + 2.4);
   // on desktop aim a little right: the problem panel covers the right of the screen
-  lookAt(new THREE.Vector3(c.x, Math.max(1.9, c.y), c.z).addScaledVector(right, TOUCH ? 0 : 0.8));
-  if (TOUCH) player.pitch += 0.12;
+  lookAt(new THREE.Vector3(c.x, Math.max(1.9, c.y), c.z).addScaledVector(right, DEV ? 0.8 : 0));
+  if (!DEV) player.pitch += 0.12;
 }
 
 // ---------- plan view overlay ----------
@@ -751,32 +753,29 @@ function infoHTML(t) {
 
 // ---------- input ----------
 function requestLock() {
-  if (TOUCH) return;
+  if (!DEV) return;
   const p = renderer.domElement.requestPointerLock();
   p?.catch?.(() => {});  // Chrome refuses for ~1 s after Esc; the overlay stays up and a click retries
 }
 $('overlay').addEventListener('click', requestLock);
-function setTouch(on) {
-  if (on === TOUCH || (FORCE_TOUCH && !on)) return;
+function setTouch(on) {  // show the joysticks for fingers, hide them for a mouse
+  if (DEV || on === TOUCH || (FORCE_TOUCH && !on)) return;
   TOUCH = on;
   document.body.classList.toggle('touch', on);
-  if (on && document.pointerLockElement) document.exitPointerLock();
-  keys.clear(); joy.x = joy.y = aim.x = aim.y = 0;
-  listOpen = !on;
-  pinned = hovered = null;
-  updateOverlayUI(); updateLockUI();
-  if (layout) applySelection();  // label sizes and the problem card differ between modes
-  if (on) toast('Left stick walks · right stick looks · tap a hold to open its problem', false, 5000);
+  joy.x = joy.y = aim.x = aim.y = 0;
+  if (on) toast(HINT_TOUCH, false, 5000);
 }
-// capture phase: switch before the overlay's click handler would ask for pointer lock
+const HINT_TOUCH = 'Left stick walks · right stick looks · tap a hold to open its problem';
+const HINT_MOUSE = 'Drag to look · WASD or arrows to walk · click a hold to open its problem';
 addEventListener('pointerdown', (e) => setTouch(e.pointerType !== 'mouse'), true);
 document.addEventListener('pointerlockchange', () => {
   locked = document.pointerLockElement === renderer.domElement;
   updateLockUI();
 });
-function updateLockUI() { $('overlay').style.display = locked || planMode || !layout || TOUCH ? 'none' : 'flex'; }
+function updateLockUI() { $('overlay').style.display = locked || planMode || !layout || !DEV ? 'none' : 'flex'; }
 
-renderer.domElement.addEventListener('click', (e) => {
+renderer.domElement.addEventListener('click', (e) => {  // ?dev tools only
+  if (!DEV) return;
   if (planMode) { pinned = pickPlan(e.clientX, e.clientY); updateOverlayUI(); }
   else if (locked) { pinned = pickFirstPerson(); updateOverlayUI(); }
 });
@@ -787,7 +786,7 @@ addEventListener('mousemove', (e) => {
   } else if (planMode && layout) setHovered(pickPlan(e.clientX, e.clientY));
 });
 addEventListener('keydown', (e) => {
-  if (e.code === 'KeyP' && layout) {
+  if (e.code === 'KeyP' && layout && DEV) {
     setPlanMode(!planMode);
     if (planMode) document.exitPointerLock(); else requestLock();
   } else if (e.code === 'KeyR' && layout) spawn();
@@ -813,7 +812,7 @@ $('problem').addEventListener('change', (e) => {
   e.target.blur();  // so the keyboard shortcuts don't change the dropdown
 });
 
-// ---------- touch: left stick walks, right stick looks, drag looks, tap a hold to open its problem ----------
+// ---------- sticks (touch), drag to look and tap/click a hold to open its problem (finger or mouse) ----------
 function stick(el, out) {
   const knob = el.firstElementChild;
   let id = null;
@@ -846,12 +845,12 @@ function turn(dt) {  // look stick: squared response so small tilts aim finely
 
 let drag = null;
 renderer.domElement.addEventListener('pointerdown', (e) => {
-  if (e.pointerType === 'mouse' || drag) return;
+  if (DEV || drag || e.button > 0) return;
   drag = { id: e.pointerId, x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t: performance.now() };
 });
 addEventListener('pointermove', (e) => {
   if (!drag || e.pointerId !== drag.id) return;
-  // inverted on purpose (owner's choice): drag the scene, so finger right looks left and finger up looks down
+  // inverted on purpose (owner's choice): drag the scene, so dragging right looks left and dragging up looks down
   player.yaw += (e.clientX - drag.x) * TOUCH_LOOK;
   player.pitch = THREE.MathUtils.clamp(player.pitch + (e.clientY - drag.y) * TOUCH_LOOK, -1.5, 1.5);
   drag.x = e.clientX; drag.y = e.clientY;
@@ -862,7 +861,7 @@ for (const t of ['pointerup', 'pointercancel']) addEventListener(t, (e) => {
   drag = null;
   if (!tap || !layout) return;
   const hit = pickFirstPerson(e.clientX / innerWidth * 2 - 1, -e.clientY / innerHeight * 2 + 1);
-  if (hit?.kind === 'hold') openHold(hit);  // walls and everything else ignore taps on phones
+  if (hit?.kind === 'hold') openHold(hit);  // walls and everything else ignore taps and clicks
 });
 
 // A tapped hold opens its problem at the move that first uses it; another problem's hold also takes you there.
@@ -908,7 +907,7 @@ renderer.setAnimationLoop(() => {
   if (!layout) return;
   if (TOUCH) turn(dt);
   animateClimber(dt);
-  if (locked || planMode || TOUCH) move(dt);
+  if (locked || planMode || !DEV) move(dt);
   camera.position.copy(player.pos);
   camera.rotation.set(player.pitch, player.yaw, 0);
   if (planMode) {
@@ -931,7 +930,7 @@ try {
     setPlanMode(saved.planMode);
   } else spawn();
   updateLockUI();
-  if (TOUCH) toast('Left stick walks · right stick looks · tap a hold to open its problem', false, 5000);
+  if (!DEV) toast(TOUCH ? HINT_TOUCH : HINT_MOUSE, false, 6000);
 } catch (err) {
   toast(location.protocol === 'file:' ? 'Open this through the server: python serve.py' : 'Failed to load model: ' + err.message, true, 0);
 }

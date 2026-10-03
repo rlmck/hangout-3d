@@ -73,15 +73,20 @@
   #problem .pbar:last-child { margin-bottom: 0; }
   #problem .nav:last-child { margin-bottom: 0; }
   #problem details.more > summary { margin: 4px 0; color: var(--text); }
-  body:not(.touch) #problem .cur { display: none; }
+  body:not(.app) #problem .cur { display: none; }
+  body.app canvas { cursor: grab; }
+  body.app canvas:active { cursor: grabbing; }
   #joy, #aim { display: none; }
-  /* phones and tablets */
-  body.touch #help, body.touch #crosshair, body.touch #info { display: none !important; }
-  body.touch #problem { left: 8px; right: 8px; top: calc(8px + env(safe-area-inset-top)); bottom: auto; width: auto; max-height: 48vh; padding: 10px 12px; }
-  body.touch #problem h2 { font-size: 15px; }
-  body.touch #problem .prow { padding: 9px 2px; font-size: 15px; }
-  body.touch .btn, body.touch #problem select { min-height: 42px; font-size: 15px; }
-  body.touch #toast { left: 8px; right: 8px; top: auto; bottom: calc(148px + env(safe-area-inset-bottom)); text-align: center; }
+  /* the app (phones and computers alike; ?dev keeps the older desktop layout) */
+  body.app #help, body.app #crosshair, body.app #info { display: none !important; }
+  body.app #problem { left: 50%; right: auto; transform: translateX(-50%); width: min(480px, calc(100vw - 16px));
+    top: calc(8px + env(safe-area-inset-top)); bottom: auto; max-height: 48vh; padding: 10px 12px; }
+  body.app #problem h2 { font-size: 15px; }
+  body.app #problem .prow { padding: 9px 2px; font-size: 15px; }
+  body.app .btn, body.app #problem select { min-height: 42px; font-size: 15px; }
+  body.app #toast { left: 50%; right: auto; transform: translateX(-50%); width: min(480px, calc(100vw - 16px)); top: auto;
+    bottom: calc(148px + env(safe-area-inset-bottom)); text-align: center; }
+  /* joysticks: touchscreens only */
   body.touch #joy, body.touch #aim { display: block; position: fixed; bottom: calc(20px + env(safe-area-inset-bottom)); width: 116px; height: 116px;
     border-radius: 50%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.18); touch-action: none; }
   body.touch #joy { left: 20px; }

@@ -9,7 +9,8 @@ and several angles are estimates. See `PROGRESS.md` for status and `CLAUDE.md` f
 
 On a phone: pick a problem from the dropdown (or tap any hold to open its problem) and step through it
 with Prev / Next. Twin sticks like a mobile shooter: left stick walks, right stick looks (dragging the
-screen also looks).
+screen also looks). On a computer it's the same app without the sticks: drag to look, WASD/arrows to walk.
+Add `?dev` to the URL for the wall-editing tools (pointer-lock walking, wall info, plan view with `P`).
 
 ## Files
 - `hangout_layout.json`: the source of truth (schema in `CLAUDE.md`). Wall ids W1–W24 match `Floor_labelled.png`.
