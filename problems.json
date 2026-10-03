@@ -1,5 +1,5 @@
 {
-  "_note": "Boulder problems drawn by the viewer (not baked into the model). Hold position: {wall, along_m, height_m} = metres along the wall from its 'from' end and height above the floor, or {at: [plan x, plan y, height], normal: [nx, ny]} for holds off the wall grid. Types: jug, crimp, sloper, pinch, pocket, foot, volume (size_m [w, h, depth], triangle point down), arete and spot (body positions, no hold; a start/finish arete gets a tape mark). facing = the way the gripping edge points (up/down/left/right). Each move is the body position AFTER the move: LH/RH/LF/RF = hold id, or null for a flagging or free limb. Move 0 is the start. Knees: LK/RK = hold or spot for a kneebar. dynamic: true marks a dynamic move (check_problems.py allows a longer reach). Off-wall holds may give a 3D normal [nx, ny, nz]; on a roof, 'up' [ux, uy] is the direction of travel. view: optional {position, look_at} for the G key, like spawn.",
+  "_note": "Boulder problems drawn by the viewer (not baked into the model). Hold position: {wall, along_m, height_m} = metres along the wall from its 'from' end and height above the floor, or {at: [plan x, plan y, height], normal: [nx, ny]} for holds off the wall grid. Types: jug, crimp, sloper, pinch, pocket, foot, volume (size_m [w, h, depth], triangle point down), arete and spot (body positions, no hold; a start/finish arete gets a tape mark). facing = the way the gripping edge points (up/down/left/right). Each move is the body position AFTER the move: LH/RH/LF/RF = hold id, or null for a flagging or free limb. Move 0 is the start. Knees: LK/RK = hold or spot for a kneebar. dynamic: true marks a dynamic move (check_problems.py allows a longer reach). Off-wall holds may give a 3D normal [nx, ny, nz]; on a roof, 'up' [ux, uy] is the direction of travel. view: optional {position, look_at} for the G key, like spawn. style: optional per-limb technique for this move, carried forward while the limb stays on its hold: feet edge (default) | smear | drop-knee | heel | toe-hook | toe-press; hands grip (default, fingers follow the hold's facing) | palm | undercling | gaston.",
   "house_rules": "Arêtes, side walls and volumes are always in.",
   "problems": [
     {
@@ -159,7 +159,10 @@
           "LH": "H3",
           "RH": "H2",
           "LF": "A3",
-          "RF": "F3"
+          "RF": "F3",
+          "style": {
+            "LF": "heel"
+          }
         },
         {
           "text": "Left foot high-steps onto the start pinch H1 and stands up. The arête won't get you to the finish from here.",
@@ -182,7 +185,10 @@
           "LH": "H3",
           "RH": "V1",
           "LF": null,
-          "RF": "V1"
+          "RF": "V1",
+          "style": {
+            "RH": "palm"
+          }
         },
         {
           "text": "Left foot to F6, right hand up to the H4 sloper.",
@@ -399,7 +405,10 @@
           "LH": "P1",
           "RH": "B2",
           "LF": "F4",
-          "RF": "F3"
+          "RF": "F3",
+          "style": {
+            "RH": "palm"
+          }
         },
         {
           "text": "Left hand to the T jug, then match.",
@@ -576,7 +585,10 @@
           "LH": "A1",
           "RH": "H1",
           "LF": "A2",
-          "RF": "F4"
+          "RF": "F4",
+          "style": {
+            "LF": "heel"
+          }
         },
         {
           "text": "Right hand to the H2 crimp, locking off against the heel.",
@@ -597,7 +609,10 @@
           "LH": "A1",
           "RH": "H2",
           "LF": "A2",
-          "RF": "F5"
+          "RF": "F5",
+          "style": {
+            "RF": "drop-knee"
+          }
         },
         {
           "text": "Let go of the arête and move your left hand up to the H3 sloper, held in by the heel and the drop-knee.",
@@ -618,7 +633,10 @@
           "LH": "H3",
           "RH": "H2",
           "LF": "A1",
-          "RF": "F5"
+          "RF": "F5",
+          "style": {
+            "LF": "heel"
+          }
         },
         {
           "text": "Swap the heel for a toe: your left toe presses W1 on the side wall, stemming against the drop-knee.",
@@ -629,7 +647,10 @@
           "LH": "H3",
           "RH": "H2",
           "LF": "W1",
-          "RF": "F5"
+          "RF": "F5",
+          "style": {
+            "LF": "toe-press"
+          }
         },
         {
           "text": "Crux: pull your hips into the roof and reach your right hand long to the T jug under the lip.",
@@ -815,7 +836,10 @@
           "LH": "H1",
           "RH": "S1",
           "LF": "F1",
-          "RF": "F3"
+          "RF": "F3",
+          "style": {
+            "RF": "drop-knee"
+          }
         },
         {
           "text": "Right hand to the two-finger pocket H2. Keep your hips low and tight to the wall.",
@@ -861,7 +885,10 @@
           "LH": "H3",
           "RH": "H2",
           "LF": "H1",
-          "RF": "C2"
+          "RF": "C2",
+          "style": {
+            "RF": "toe-hook"
+          }
         },
         {
           "text": "Pull on the toe hook and take your right hand to the H4 sidepull.",
@@ -883,7 +910,10 @@
           "LH": "H3",
           "RH": "H4",
           "LF": "F6",
-          "RF": "H2"
+          "RF": "H2",
+          "style": {
+            "RF": "heel"
+          }
         },
         {
           "text": "Left hand to the lip jug T, then match.",
@@ -1287,7 +1317,11 @@
           "LH": "R2",
           "RH": "R3",
           "LF": "R1",
-          "RF": "R1"
+          "RF": "R1",
+          "style": {
+            "RF": "toe-hook",
+            "LF": "toe-press"
+          }
         },
         {
           "text": "Left hand to the R4 crimp, the last hold before the lip.",
@@ -1318,7 +1352,10 @@
           "LH": "R4",
           "RH": "J1",
           "LF": "R1",
-          "RF": "L2"
+          "RF": "L2",
+          "style": {
+            "RF": "heel"
+          }
         },
         {
           "text": "Crux, turning the lip: your left hand slaps the lip edge at L1, your left foot drops, then pull on the heel and press down until your hips are over the edge.",
@@ -1330,7 +1367,10 @@
           "LH": "L1",
           "RH": "J1",
           "LF": null,
-          "RF": "L2"
+          "RF": "L2",
+          "style": {
+            "LH": "palm"
+          }
         },
         {
           "text": "Rock over the heel and take your right hand up to the T jug.",

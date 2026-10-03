@@ -10,7 +10,7 @@ import http.server, json, os, subprocess, sys, threading, time, webbrowser
 ROOT = os.path.dirname(os.path.abspath(__file__))
 LAYOUT, GLB = os.path.join(ROOT, 'hangout_layout.json'), os.path.join(ROOT, 'hangout_blockout.glb')
 PROBLEMS = os.path.join(ROOT, 'problems.json')
-PAGE_FILES = [os.path.join(ROOT, f) for f in ('index.html', 'viewer.js')]
+PAGE_FILES = [os.path.join(ROOT, f) for f in ('index.html', 'viewer.js', 'climber.js')]
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
 
 cond = threading.Condition()

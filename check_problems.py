@@ -15,6 +15,8 @@ LIMBS = ['LH', 'RH', 'LF', 'RF', 'LK', 'RK']
 MAX_MOVE = {'H': 1.5, 'F': 1.3, 'K': 1.2}  # one limb moving between holds (x1.25 for a move marked dynamic)
 MAX_HANDS, MAX_HAND_FOOT, MAX_FEET = 1.7, 2.1, 1.5  # spans held at the same time
 SHIN = (0.3, 0.6)  # knee to same-side foot, for kneebars
+STYLES_F = {'edge', 'smear', 'drop-knee', 'heel', 'toe-hook', 'toe-press'}
+STYLES_H = {'grip', 'palm', 'undercling', 'gaston'}
 
 
 def wall_point(w, along, h):
@@ -65,6 +67,9 @@ for pr in P['problems']:
         bad = [f"{l}={m[l]}" for l in LIMBS if m.get(l) and m[l] not in pos]
         if bad: errors.append(f"{pr['id']} move {i}: unknown hold {bad}"); continue
         at = {l: m[l] for l in LIMBS if m.get(l)}
+        for l, v in (m.get('style') or {}).items():
+            ok = {'H': STYLES_H, 'F': STYLES_F}.get(l[1:2], set())
+            if l not in at or v not in ok: errors.append(f"{pr['id']} move {i}: bad style {l}={v}")
         notes = []
         for l, hid in at.items():
             if i and prev.get(l) and prev[l] != hid:

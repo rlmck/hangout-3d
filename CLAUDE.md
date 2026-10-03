@@ -28,7 +28,7 @@ on 127.0.0.1/localhost), so rebuild the `.glb` locally and commit it along with 
 | `problems.json` | Boulder problems (holds + move-by-move beta). Drawn by the viewer, not baked into the GLB. |
 | `check_problems.py` | Checks problems.json: hold placement and reach per move. |
 | `build_model.py` | JSON -> `hangout_blockout.glb` (+ `.obj`/`.mtl`). trimesh + numpy. |
-| `index.html`, `viewer.js` | Three.js 0.170 first-person viewer (loaded from jsDelivr via an importmap; no build step). |
+| `index.html`, `viewer.js`, `climber.js` | Three.js 0.170 first-person viewer (climber.js = the animated climber) (loaded from jsDelivr via an importmap; no build step). |
 | `serve.py` | Dev server + file watcher + Server-Sent Events (`/events`) for live reload. |
 | `Floor.png` | The owner's hand-drawn plan (north = up). |
 | `Floor_labelled.png` | Same plan with line numbers 1-24. **Wall ids W1..W24 match these numbers.** |
@@ -100,11 +100,13 @@ on 127.0.0.1/localhost), so rebuild the `.glb` locally and commit it along with 
 - Problems: `N` cycles problems (then none), `[` / `]` step through the moves, `G` stands you in front of the
   problem. The selected problem shows `S`/`TOP` and LH/RH/LF/RF markers (bigger = the limb that just moved);
   other problems dim. Hovering a hold shows its type, position and which moves use it.
-- The selected problem is acted out by a translucent climber: left/right hand outlines and left/right shoe outlines
-  (K for knees) on the holds, plus a stick body estimated from them (`bodyPoints`: torso between hands and feet,
-  pushed out along the holds' normals; a null foot hangs as a flag). Next/Prev animate each changed limb along an
-  arc off the wall with a fading dotted trail, feet first (hands first on `dynamic` moves). Test in a hidden tab
-  with `viewer.setStep(i)` then `viewer.animateClimber(0.05)` in a loop.
+- The selected problem is acted out by a mannequin (`climber.js`, see its header comment). Hands lie flat on the hold
+  with fingers along the hold's `facing` (wrist on the other side); shoes are placed by the move's per-limb `style`
+  (edge / smear / drop-knee / heel / toe-hook / toe-press; a null foot flags, both null hang). The torso is solved each
+  frame so limbs reach (1.75 m proportions), kept 0.25-0.36 m off the wall, hips turned for drop-knees and laybacks;
+  elbows/knees use two-bone IK with grip-dependent poles. Next/Prev animate changed limbs along arcs with fading
+  trails, feet first (hands first on `dynamic` moves). Test in a hidden tab: `viewer.setStep(i)` then
+  `viewer.animateClimber(0.05)` in a loop.
 - Hover info shows the wall id, notes, and a panel table (height range, angle, slab/vertical/overhang).
 - Collision: radial raycasts (radius 0.3 m) at heights 0.25, 0.9, 1.5 and 1.85 m. Anything hanging higher than
   ~1.9 m can be walked under, which is why the bridge (2.4 m) and the cave walk-under (2.1 m) work.
