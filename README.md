@@ -31,7 +31,7 @@ python serve.py               # opens http://127.0.0.1:8000/  (python serve.py 8
 `build_model.py` on save and hot-swaps the model in the open viewer (your position is kept; build errors
 show top-right). Three.js 0.170 loads from the jsDelivr CDN, so the first load needs internet.
 
-Controls: click to walk · WASD/arrows · Shift run · mouse look · `P` plan view (hover/click walls) ·
+Controls with `?dev`: click to walk · WASD/arrows · Shift run · mouse look · `P` plan view (hover/click walls) ·
 `R` respawn · click pins the info panel · Esc releases the mouse.
 In the plan view the thick pink line is each wall's base, the orange fill is how far its overhang reaches.
 `spawn.position` / `look_at` are `[plan x, height, plan y]`.
