@@ -192,6 +192,15 @@ function wallFrame(w, along, h) {
   return { pos: world(w.from[0] + dx * along + nx * off, w.from[1] + dy * along + ny * off, h), x, y: new THREE.Vector3().crossVectors(z, x), z };
 }
 
+// Body positions in problems.json: [along, height, out] = `out` metres straight out (level) from the wall's face at
+// that height.
+function wallPoint(id, [along, h, out]) {
+  const w = layout.walls.find((q) => q.id === id);
+  if (!w) return null;
+  const f = wallFrame(w, along, h), n = new THREE.Vector3(f.z.x, 0, f.z.z);
+  return n.lengthSq() > 1e-6 ? f.pos.addScaledVector(n.normalize(), out) : f.pos;
+}
+
 function holdFrame(h, p) {
   if (h.at) {
     const [nx, ny, nz = 0] = h.normal, z = world(nx, ny, nz).normalize();
@@ -314,6 +323,7 @@ function buildClimber(p) {
   if (climber) { scene.remove(climber.group); climber.dispose(); climber = null; }
   if (!p) return;
   climber = new Climber({ problem: p, step, frame: (h) => frames.get(h), size: holdSize, colours: LIMB_COLOUR,
+    place: (v, wall) => wallPoint(wall || p.wall, v),
     scale: DEV ? 1 : 1.25, dotSize: DEV ? 7 : 9 });
   scene.add(climber.group);
 }

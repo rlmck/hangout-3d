@@ -110,3 +110,12 @@ Lengths are scaled from the drawing, assuming the bridge is exactly 2.4 m wide. 
   problems don't cross.
 - Next: get the owner's verdict on these two, then more walls (overhangs W8/W10, bridge sides).
   Real hold capture (option b) is still possible later.
+
+## Body beta (Oct 2026)
+- Three procedural-body attempts (solved torso, energy torso, gravity) were dropped: the owner found the arms and
+  legs unnatural, especially elbows and knees. Cause: the solver had to guess the hips from four holds.
+- New approach: the hips are written into each move (`body`), and elbows/knees are chosen by anatomical scoring.
+  Letting Go has hips for all 8 moves (drafted by Claude, waiting for the owner's sanity check). Move 4 (left foot
+  onto H1) is tight: the right foot on F3 is at full stretch while the left knee is folded, so the hips get nudged.
+- Next: owner checks Letting Go; then bodies for Bridge End, Arch Enemy, Black Hole, The Plank (roof moves will need
+  hips given as plan coordinates); then a rigged mesh instead of the blob mannequin, and a `?dev` pose editor.

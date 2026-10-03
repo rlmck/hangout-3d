@@ -28,7 +28,7 @@ on 127.0.0.1/localhost), so rebuild the `.glb` locally and commit it along with 
 | `problems.json` | Boulder problems (holds + move-by-move beta). Drawn by the viewer, not baked into the GLB. |
 | `check_problems.py` | Checks problems.json: hold placement and reach per move. |
 | `build_model.py` | JSON -> `hangout_blockout.glb` (+ `.obj`/`.mtl`). trimesh + numpy. |
-| `index.html`, `viewer.js`, `climber.js` | Three.js 0.170 first-person viewer (climber.js = the animated hands and feet) (loaded from jsDelivr via an importmap; no build step). |
+| `index.html`, `viewer.js`, `climber.js` | Three.js 0.170 first-person viewer (climber.js = the animated climber) (loaded from jsDelivr via an importmap; no build step). |
 | `serve.py` | Dev server + file watcher + Server-Sent Events (`/events`) for live reload. |
 | `Floor.png` | The owner's hand-drawn plan (north = up). |
 | `Floor_labelled.png` | Same plan with line numbers 1-24. **Wall ids W1..W24 match these numbers.** |
@@ -69,6 +69,11 @@ on 127.0.0.1/localhost), so rebuild the `.glb` locally and commit it along with 
   `facing` = the way the gripping edge points.
 - Move: `{text, technique[], LH, RH, LF, RF, LK?, RK?, dynamic?}` = the body position **after** the move (hold id,
   or null when flagging; LK/RK = knee for a kneebar). Move 0 is the start. Hold ids only need to be unique within a problem.
+- Body beta (optional, per move): `body: {hips: [along, height, out], turn?, lean?, chest?, wall?, elbows?, knees?}`.
+  `hips` is on the problem's wall (or `wall`): `out` = metres straight out (level) from the face at that height.
+  `turn` (deg) > 0 brings the right hip in to the wall (drop-knees, laybacks); `lean` (deg) tips the chest back;
+  `elbows` / `knees` force a direction for one limb: `{"RF": "in"}` with out / in / up / down / back / wall.
+  A problem gets a body only if at least one move has `body`; others show hands and feet only.
 - Off-wall holds: `normal` may be 3D `[nx, ny, nz]`; on a roof (normal down) `up: [ux, uy]` is the direction of travel.
   Optional problem fields: `where` (shown instead of `wall`), `view: {position, look_at}` for `G` (like `spawn`).
 - **Run `python check_problems.py` after editing problems.** It checks hold ids, holds inside blocks or off a
@@ -100,12 +105,16 @@ on 127.0.0.1/localhost), so rebuild the `.glb` locally and commit it along with 
 - Problems: `N` cycles problems (then none), `[` / `]` step through the moves, `G` stands you in front of the
   problem. The selected problem shows `S`/`TOP` and LH/RH/LF/RF markers (bigger = the limb that just moved);
   other problems dim. Hovering a hold shows its type, position and which moves use it.
-- The selected problem is shown as **hands and feet only** (`climber.js`; no body, on purpose: the owner preferred
-  that to a procedural body that never looked natural). Hands are outlines lying on the hold with fingers along the
+- The selected problem is acted out by `climber.js`. Hands are outlines lying on the hold with fingers along the
   hold's `facing`; shoes are small outlined 3D shoes placed by the move's per-limb `style` (edge / smear / drop-knee /
-  heel / toe-hook / toe-press); a kneebar knee is a small marker; a limb with no hold fades out. Next/Prev animate
-  changed limbs along arcs with fading trails, feet first (hands first on `dynamic` moves). Test in a hidden tab:
-  `viewer.setStep(i)` then `viewer.animateClimber(0.05)` in a loop.
+  heel / toe-hook / toe-press); a kneebar knee is a small marker. With `body` data a mannequin joins them: hips from
+  `body.hips` (authored on purpose: the old solver guessed the hips and the owner found its arms and legs unnatural,
+  especially elbows and knees), nudged only if a limb can't reach (or is folded tighter than 0.36 m hip to ankle);
+  each elbow/knee is the best of 48 bend directions by an anatomical score (forearm from the side the hand pulls
+  toward, kneecap over the toes, no hip/shoulder hyperextension, not through the torso or wall); a free foot flags.
+  Without a body a limb with no hold fades out. Next/Prev animate changed limbs along arcs with fading trails, feet
+  first (hands first on `dynamic` moves); the hips lead. Test in a hidden tab: `viewer.setStep(i)` then
+  `viewer.animateClimber(0.05)` in a loop; `viewer.climber().dbg` has the joints, `.body` / `.bodyTarget` the hips.
 - Hover info shows the wall id, notes, and a panel table (height range, angle, slab/vertical/overhang).
 - Collision: radial raycasts (radius 0.3 m) at heights 0.25, 0.9, 1.5 and 1.85 m. Anything hanging higher than
   ~1.9 m can be walked under, which is why the bridge (2.4 m) and the cave walk-under (2.1 m) work.

@@ -127,7 +127,8 @@
           "LH": "A1",
           "RH": "H1",
           "LF": "F1",
-          "RF": "F2"
+          "RF": "F2",
+          "body": {"hips": [0.45, 1.12, 0.28]}
         },
         {
           "text": "Right foot high-steps to F3. Layback off the arête and walk your left hand up it.",
@@ -138,7 +139,8 @@
           "LH": "A2",
           "RH": "H1",
           "LF": "F1",
-          "RF": "F3"
+          "RF": "F3",
+          "body": {"hips": [0.4, 1.27, 0.22], "turn": 25}
         },
         {
           "text": "Right hand to H2 as a sidepull, leaning left onto the arête.",
@@ -148,7 +150,8 @@
           "LH": "A2",
           "RH": "H2",
           "LF": "F1",
-          "RF": "F3"
+          "RF": "F3",
+          "body": {"hips": [0.4, 1.28, 0.24], "turn": 15}
         },
         {
           "text": "Left heel-toe on the arête, pull through it and take the H3 crimp with your left hand.",
@@ -162,7 +165,8 @@
           "RF": "F3",
           "style": {
             "LF": "heel"
-          }
+          },
+          "body": {"hips": [0.5, 1.55, 0.3]}
         },
         {
           "text": "Left foot high-steps onto the start pinch H1 and stands up. The arête won't get you to the finish from here.",
@@ -173,7 +177,8 @@
           "LH": "H3",
           "RH": "H2",
           "LF": "H1",
-          "RF": "F3"
+          "RF": "F3",
+          "body": {"hips": [0.55, 1.75, 0.38]}
         },
         {
           "text": "Crux. Right foot onto the volume's lower facet, drop your right hand to palm its top. Move your hips right over your right foot and stand up, with only H3 for balance. Flag your left leg out left.",
@@ -188,7 +193,8 @@
           "RF": "V1",
           "style": {
             "RH": "palm"
-          }
+          },
+          "body": {"hips": [0.96, 1.81, 0.38]}
         },
         {
           "text": "Left foot to F6, right hand up to the H4 sloper.",
@@ -199,7 +205,8 @@
           "LH": "H3",
           "RH": "H4",
           "LF": "F6",
-          "RF": "V1"
+          "RF": "V1",
+          "body": {"hips": [1.0, 2.25, 0.33]}
         },
         {
           "text": "Left hand to the T jug, then match.",
@@ -209,7 +216,8 @@
           "LH": "T",
           "RH": "T",
           "LF": "F6",
-          "RF": "V1"
+          "RF": "V1",
+          "body": {"hips": [1.27, 2.3, 0.28]}
         }
       ]
     },

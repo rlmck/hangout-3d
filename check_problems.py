@@ -17,6 +17,7 @@ MAX_HANDS, MAX_HAND_FOOT, MAX_FEET = 1.7, 2.1, 1.5  # spans held at the same tim
 SHIN = (0.3, 0.6)  # knee to same-side foot, for kneebars
 STYLES_F = {'edge', 'smear', 'drop-knee', 'heel', 'toe-hook', 'toe-press'}
 STYLES_H = {'grip', 'palm', 'undercling', 'gaston'}
+BODY_WORDS = {'out', 'in', 'up', 'down', 'back', 'wall'}  # body.elbows / body.knees directions
 
 
 def wall_point(w, along, h):
@@ -70,6 +71,12 @@ for pr in P['problems']:
         for l, v in (m.get('style') or {}).items():
             ok = {'H': STYLES_H, 'F': STYLES_F}.get(l[1:2], set())
             if l not in at or v not in ok: errors.append(f"{pr['id']} move {i}: bad style {l}={v}")
+        b = m.get('body')
+        if b is not None:
+            for k, v in b.items():
+                ok = (k in ('hips', 'chest') and isinstance(v, list) and len(v) == 3 and all(isinstance(x, (int, float)) for x in v))                     or (k in ('turn', 'lean') and isinstance(v, (int, float))) or (k == 'wall' and v in WALLS)                     or (k in ('elbows', 'knees') and isinstance(v, dict) and all(
+                        lk in ({'LH', 'RH'} if k == 'elbows' else {'LF', 'RF'}) and w in BODY_WORDS for lk, w in v.items()))
+                if not ok: errors.append(f"{pr['id']} move {i}: bad body.{k} = {v}")
         notes = []
         for l, hid in at.items():
             if i and prev.get(l) and prev[l] != hid:
