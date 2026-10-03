@@ -70,20 +70,19 @@
   #problem .nav .btn { flex: 1; }
   #problem details.more > summary { margin: 4px 0; color: var(--text); }
   body:not(.touch) #problem .cur { display: none; }
-  #info .x { float: right; font: 20px/1 system-ui, sans-serif; color: var(--text); background: none; border: 0; padding: 0 2px 6px 10px; cursor: pointer; }
-  #joy, #mapbtn { display: none; }
+  #joy, #aim { display: none; }
   /* phones and tablets */
-  body.touch #help, body.touch #crosshair { display: none; }
+  body.touch #help, body.touch #crosshair, body.touch #info { display: none !important; }
   body.touch #problem { left: 8px; right: 8px; top: calc(8px + env(safe-area-inset-top)); bottom: auto; width: auto; max-height: 48vh; padding: 10px 12px; }
   body.touch #problem h2 { font-size: 15px; }
+  body.touch #problem .prow { padding: 9px 2px; font-size: 15px; }
   body.touch .btn, body.touch #problem select { min-height: 42px; font-size: 15px; }
-  body.touch #info { left: 8px; right: 8px; width: auto; bottom: calc(148px + env(safe-area-inset-bottom)); max-height: 34vh; overflow-y: auto; }
   body.touch #toast { left: 8px; right: 8px; top: auto; bottom: calc(148px + env(safe-area-inset-bottom)); text-align: center; }
-  body.touch #joy { display: block; position: fixed; left: 20px; bottom: calc(20px + env(safe-area-inset-bottom)); width: 116px; height: 116px;
+  body.touch #joy, body.touch #aim { display: block; position: fixed; bottom: calc(20px + env(safe-area-inset-bottom)); width: 116px; height: 116px;
     border-radius: 50%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.18); touch-action: none; }
-  #joy .knob { position: absolute; left: 33px; top: 33px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.32); pointer-events: none; }
-  body.touch #mapbtn { display: block; position: fixed; right: 20px; bottom: calc(40px + env(safe-area-inset-bottom)); width: 72px; height: 72px;
-    border-radius: 50%; background: var(--panel); font-weight: 600; }
+  body.touch #joy { left: 20px; }
+  body.touch #aim { right: 20px; }
+  #joy .knob, #aim .knob { position: absolute; left: 33px; top: 33px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.32); pointer-events: none; }
 </style>
 <script type="importmap">
 { "imports": {
@@ -100,7 +99,7 @@
 <div id="toast" class="hud"></div>
 <div id="problem" class="hud"></div>
 <div id="joy" aria-label="Walk"><div class="knob"></div></div>
-<button id="mapbtn" class="btn">Map</button>
+<div id="aim" aria-label="Look"><div class="knob"></div></div>
 <div id="overlay"><div class="card">
   <h1>The Hangout</h1>
   <p>Schematic blockout: only the 3.6 m wall height is measured.</p>

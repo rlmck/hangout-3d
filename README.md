@@ -7,8 +7,9 @@ and several angles are estimates. See `PROGRESS.md` for status and `CLAUDE.md` f
 
 **Live viewer (works on phones):** https://rlmck.github.io/hangout-3d/
 
-On a phone: pick a problem from the dropdown, step through it with Prev / Next, drag to look around,
-use the stick (bottom left) to walk, tap a hold or wall for details, and tap Map for the plan view.
+On a phone: pick a problem from the dropdown (or tap any hold to open its problem) and step through it
+with Prev / Next. Twin sticks like a mobile shooter: left stick walks, right stick looks (dragging the
+screen also looks).
 
 ## Files
 - `hangout_layout.json`: the source of truth (schema in `CLAUDE.md`). Wall ids W1–W24 match `Floor_labelled.png`.

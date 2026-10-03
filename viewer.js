@@ -9,9 +9,10 @@ const EYE = 1.7, RADIUS = 0.3, WALK = 2.5, RUN = 5.0, LOOK = 0.0022;
 const BODY_HEIGHTS = [0.25, 0.9, 1.5, 1.85];  // collision ray heights above the floor
 const world = (x, y, h = 0) => new THREE.Vector3(x, h, -y);
 const $ = (id) => document.getElementById(id);
-// Phones and tablets: on-screen stick, drag to look, tap to pick (?touch forces it on a desktop for testing)
+// Phones and tablets: twin sticks like a mobile shooter (left walks, right looks), drag also looks,
+// tapping a hold opens its problem (?touch forces this on a desktop for testing)
 const TOUCH = matchMedia('(pointer: coarse)').matches || new URLSearchParams(location.search).has('touch');
-const TOUCH_LOOK = 0.005;
+const TOUCH_LOOK = 0.005, STICK_TURN = 2.4;  // drag: radians per pixel; look stick: radians per second at full tilt
 document.body.classList.toggle('touch', TOUCH);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -432,7 +433,6 @@ function setPlanMode(on) {
     mesh.material.transparent = on; mesh.material.opacity = on ? 0.25 : 1; mesh.material.depthWrite = !on;
   }
   hovered = null;
-  $('mapbtn').textContent = on ? '3D' : 'Map';
   updateOverlayUI();
   updateLockUI();
 }
@@ -449,7 +449,7 @@ function collides(x, z) {
   return false;
 }
 
-const joy = { x: 0, y: 0 };  // on-screen stick, -1..1 (y down = backwards)
+const joy = { x: 0, y: 0 }, aim = { x: 0, y: 0 };  // on-screen sticks, -1..1 (y down): walk, look
 function move(dt) {
   let f = -joy.y, r = joy.x;
   if (keys.has('KeyW') || keys.has('ArrowUp')) f += 1;
@@ -510,8 +510,7 @@ function updateOverlayUI() {
     mesh.material.emissive.setRGB(e, e * 0.75, e * 0.3);
   }
   $('info').style.display = target ? 'block' : 'none';
-  if (target) $('info').innerHTML = (target === pinned && !hovered
-    ? (TOUCH ? '<button class="x" data-act="close" aria-label="Close">×</button>' : '<span class="pin">pinned · click empty space to clear</span>') : '') + infoHTML(target);
+  if (target) $('info').innerHTML = (target === pinned && !hovered ? '<span class="pin">pinned · click empty space to clear</span>' : '') + infoHTML(target);
 }
 
 function infoHTML(t) {
@@ -591,37 +590,47 @@ $('problem').addEventListener('change', (e) => {
   selectProblem(+e.target.value); goToProblem();
   e.target.blur();  // so the keyboard shortcuts don't change the dropdown
 });
-$('info').addEventListener('click', (e) => {
-  if (e.target.closest('[data-act="close"]')) { pinned = null; updateOverlayUI(); }
-});
 
-// ---------- touch: stick to walk, drag to look, tap to pick ----------
-const joyEl = $('joy'), knob = joyEl.firstElementChild;
-let joyId = null, drag = null;
-function joyMove(e) {
-  const r = joyEl.getBoundingClientRect(), R = r.width / 2;
-  let dx = (e.clientX - r.left - R) / R, dy = (e.clientY - r.top - R) / R;
-  const l = Math.hypot(dx, dy);
-  if (l > 1) { dx /= l; dy /= l; }
-  joy.x = dx; joy.y = dy;
-  knob.style.transform = `translate(${dx * R * 0.55}px, ${dy * R * 0.55}px)`;
+// ---------- touch: left stick walks, right stick looks, drag looks, tap a hold to open its problem ----------
+function stick(el, out) {
+  const knob = el.firstElementChild;
+  let id = null;
+  const set = (e) => {
+    const r = el.getBoundingClientRect(), R = r.width / 2;
+    let dx = (e.clientX - r.left - R) / R, dy = (e.clientY - r.top - R) / R;
+    const l = Math.hypot(dx, dy);
+    if (l > 1) { dx /= l; dy /= l; }
+    out.x = dx; out.y = dy;
+    knob.style.transform = `translate(${dx * R * 0.55}px, ${dy * R * 0.55}px)`;
+  };
+  el.addEventListener('pointerdown', (e) => {
+    id = e.pointerId;
+    try { el.setPointerCapture(id); } catch {}  // keep tracking if the finger slides off the stick
+    set(e);
+  });
+  el.addEventListener('pointermove', (e) => { if (e.pointerId === id) set(e); });
+  for (const t of ['pointerup', 'pointercancel']) el.addEventListener(t, (e) => {
+    if (e.pointerId !== id) return;
+    id = null; out.x = out.y = 0; knob.style.transform = '';
+  });
 }
-joyEl.addEventListener('pointerdown', (e) => { joyId = e.pointerId; joyEl.setPointerCapture(e.pointerId); joyMove(e); });
-joyEl.addEventListener('pointermove', (e) => { if (e.pointerId === joyId) joyMove(e); });
-for (const t of ['pointerup', 'pointercancel']) joyEl.addEventListener(t, (e) => {
-  if (e.pointerId !== joyId) return;
-  joyId = null; joy.x = joy.y = 0; knob.style.transform = '';
-});
+stick($('joy'), joy);
+stick($('aim'), aim);
+function turn(dt) {  // look stick: squared response so small tilts aim finely
+  const k = STICK_TURN * dt, c = (v) => Math.sign(v) * v * v;
+  player.yaw -= c(aim.x) * k;
+  player.pitch = THREE.MathUtils.clamp(player.pitch - c(aim.y) * k * 0.7, -1.5, 1.5);
+}
+
+let drag = null;
 renderer.domElement.addEventListener('pointerdown', (e) => {
   if (e.pointerType === 'mouse' || drag) return;
   drag = { id: e.pointerId, x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t: performance.now() };
 });
 addEventListener('pointermove', (e) => {
   if (!drag || e.pointerId !== drag.id) return;
-  if (!planMode) {  // drag the scene: finger right turns the view left, like a photo sphere
-    player.yaw += (e.clientX - drag.x) * TOUCH_LOOK;
-    player.pitch = THREE.MathUtils.clamp(player.pitch + (e.clientY - drag.y) * TOUCH_LOOK, -1.5, 1.5);
-  }
+  player.yaw -= (e.clientX - drag.x) * TOUCH_LOOK;  // finger right looks right, finger up looks up
+  player.pitch = THREE.MathUtils.clamp(player.pitch - (e.clientY - drag.y) * TOUCH_LOOK, -1.5, 1.5);
   drag.x = e.clientX; drag.y = e.clientY;
 });
 for (const t of ['pointerup', 'pointercancel']) addEventListener(t, (e) => {
@@ -629,10 +638,17 @@ for (const t of ['pointerup', 'pointercancel']) addEventListener(t, (e) => {
   const tap = e.type === 'pointerup' && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 10 && performance.now() - drag.t < 400;
   drag = null;
   if (!tap || !layout) return;
-  pinned = planMode ? pickPlan(e.clientX, e.clientY) : pickFirstPerson(e.clientX / innerWidth * 2 - 1, -e.clientY / innerHeight * 2 + 1);
-  updateOverlayUI();
+  const hit = pickFirstPerson(e.clientX / innerWidth * 2 - 1, -e.clientY / innerHeight * 2 + 1);
+  if (hit?.kind === 'hold') openHold(hit);  // walls and everything else ignore taps on phones
 });
-$('mapbtn').addEventListener('click', () => { if (layout) setPlanMode(!planMode); });
+
+// A tapped hold opens its problem at the move that first uses it; another problem's hold also takes you there.
+function openHold({ hold, problem }) {
+  const i = problems.indexOf(problem);
+  if (i !== sel) { selectProblem(i); goToProblem(); return; }
+  const first = problem.moves.findIndex((m) => LIMBS.some((l) => m[l] === hold.id));
+  if (first >= 0) setStep(first);
+}
 addEventListener('blur', () => keys.clear());
 addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight); labelRenderer.setSize(innerWidth, innerHeight);
@@ -667,6 +683,7 @@ const clock = new THREE.Clock();
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.05);
   if (!layout) return;
+  if (TOUCH) turn(dt);
   if (locked || planMode || TOUCH) move(dt);
   camera.position.copy(player.pos);
   camera.rotation.set(player.pitch, player.yaw, 0);
@@ -690,9 +707,9 @@ try {
     setPlanMode(saved.planMode);
   } else spawn();
   updateLockUI();
-  if (TOUCH) toast('Drag to look · stick to walk · tap a hold for details', false, 5000);
+  if (TOUCH) toast('Left stick walks · right stick looks · tap a hold to open its problem', false, 5000);
 } catch (err) {
   toast(location.protocol === 'file:' ? 'Open this through the server: python serve.py' : 'Failed to load model: ' + err.message, true, 0);
 }
 window.viewer = { player, scene, camera, keys, move, collides, pickFirstPerson, setPlanMode, spawn, info: () => info,
-  problems: () => problems, selectProblem, setStep, goToProblem };  // handy from the devtools console
+  problems: () => problems, selectProblem, setStep, goToProblem, joy, aim, turn };  // handy from the devtools console

@@ -79,9 +79,12 @@ on 127.0.0.1/localhost), so rebuild the `.glb` locally and commit it along with 
 - Low roofs (the bridge underside is 2.4 m up): feet must stay in the roof, because hanging straight down puts them on the mat.
 
 ## Viewer behaviour
-- Phones/tablets (`pointer: coarse`, or `?touch` in the URL to test on a desktop): an on-screen stick to walk,
-  drag to look, tap to pick, a Map button, and the problem card at the top with a dropdown and Prev/Next.
-  Portrait screens get a 90° vertical FOV.
+- Phones/tablets (`pointer: coarse`, or `?touch` in the URL to test on a desktop): twin sticks like a mobile
+  shooter (left walks, right looks, squared response), dragging the screen also looks (finger right = look right).
+  No wall info, no plan view. Tapping a hold opens its problem (camera goes there, beta from the start); tapping a
+  hold of the open problem jumps to the move that first uses it. The problem card sits at the top with a dropdown
+  and Prev/Next. Portrait screens get a 90° vertical FOV. A hidden tab runs no frames: test sticks with
+  `viewer.aim` / `viewer.turn(dt)` and `viewer.joy` / `viewer.move(dt)`.
 - WASD/arrows + Shift, mouse-look with pointer lock, eye height 1.7 m, `R` respawn, `P` top-down plan view
   (wall labels, pink = base line, orange = overhang footprint), click pins the info panel.
 - Problems: `N` cycles problems (then none), `[` / `]` step through the moves, `G` stands you in front of the
