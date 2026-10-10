@@ -119,3 +119,15 @@ Lengths are scaled from the drawing, assuming the bridge is exactly 2.4 m wide. 
   onto H1) is tight: the right foot on F3 is at full stretch while the left knee is folded, so the hips get nudged.
 - Next: owner checks Letting Go; then bodies for Bridge End, Arch Enemy, Black Hole, The Plank (roof moves will need
   hips given as plan coordinates); then a rigged mesh instead of the blob mannequin, and a `?dev` pose editor.
+
+## Tunnel Vision and hidden problems (Oct 2026)
+- The owner asked for one standout problem in the roof area, with a toe-hook sequence, and for the others to be hidden.
+- `hidden: true` in problems.json keeps a problem out of the viewer; `?all` in the URL shows them again. Letting Go,
+  Bridge End, Arch Enemy, Black Hole and The Plank are hidden (kept, not deleted).
+- **Tunnel Vision (V5), lime:** sit start on W21 at the back of the tunnel under the bridge, a diagonal across the
+  bridge's underside to the west lip, turn the lip onto W19. Feet never leave the roof once they're up: toe hook on the
+  R1 horn, a hand-foot match on the big V1 volume, then the puzzle (switch from a left-foot toe hook that barn-doors
+  to a right toe hook + left toe press scissor on the volume), crux lock-off to R4, heel hook the lip, mantle.
+  Full body beta (hips + chest per move, given on W21: out = metres north of W21). Checked in screenshots.
+- Waiting on: the owner's verdict on the line, grade and body; does the bridge underside really take holds?
+

@@ -16,6 +16,7 @@ const $ = (id) => document.getElementById(id);
 // ?dev brings back the wall-editing tools: pointer-lock walking, wall info on hover, plan view (P).
 const params = new URLSearchParams(location.search);
 const DEV = params.has('dev'), FORCE_TOUCH = params.has('touch');
+const SHOW_ALL = params.has('all');  // ?all also shows problems marked "hidden" in problems.json
 let TOUCH = !DEV && (FORCE_TOUCH || matchMedia('(any-pointer: coarse)').matches || navigator.maxTouchPoints > 1);
 const TOUCH_LOOK = 0.005, STICK_TURN = 2.4;  // drag: radians per pixel; look stick: radians per second at full tilt
 document.body.classList.toggle('app', !DEV);
@@ -256,7 +257,7 @@ function textSprite(text, bg, size, opacity = 1) {
 
 function setProblems(data) {
   const id = problems[sel]?.id;
-  problems = data.problems || [];
+  problems = (data.problems || []).filter((p) => SHOW_ALL || !p.hidden);
   houseRules = data.house_rules || '';
   sel = problems.findIndex((p) => p.id === id);
   if (holdGroup) { scene.remove(holdGroup); dispose(holdGroup); }

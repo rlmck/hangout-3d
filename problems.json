@@ -1,9 +1,10 @@
 {
-  "_note": "Boulder problems drawn by the viewer (not baked into the model). Hold position: {wall, along_m, height_m} = metres along the wall from its 'from' end and height above the floor, or {at: [plan x, plan y, height], normal: [nx, ny]} for holds off the wall grid. Types: jug, crimp, sloper, pinch, pocket, foot, volume (size_m [w, h, depth], triangle point down), arete and spot (body positions, no hold; a start/finish arete gets a tape mark). facing = the way the gripping edge points (up/down/left/right). Each move is the body position AFTER the move: LH/RH/LF/RF = hold id, or null for a flagging or free limb. Move 0 is the start. Knees: LK/RK = hold or spot for a kneebar. dynamic: true marks a dynamic move (check_problems.py allows a longer reach). Off-wall holds may give a 3D normal [nx, ny, nz]; on a roof, 'up' [ux, uy] is the direction of travel. view: optional {position, look_at} for the G key, like spawn. style: optional per-limb technique for this move, carried forward while the limb stays on its hold: feet edge (default) | smear | drop-knee | heel | toe-hook | toe-press; hands grip (default, fingers follow the hold's facing) | palm | undercling | gaston.",
+  "_note": "Boulder problems drawn by the viewer (not baked into the model). Hold position: {wall, along_m, height_m} = metres along the wall from its 'from' end and height above the floor, or {at: [plan x, plan y, height], normal: [nx, ny]} for holds off the wall grid. Types: jug, crimp, sloper, pinch, pocket, foot, volume (size_m [w, h, depth], triangle point down), arete and spot (body positions, no hold; a start/finish arete gets a tape mark). facing = the way the gripping edge points (up/down/left/right). Each move is the body position AFTER the move: LH/RH/LF/RF = hold id, or null for a flagging or free limb. Move 0 is the start. Knees: LK/RK = hold or spot for a kneebar. dynamic: true marks a dynamic move (check_problems.py allows a longer reach). Off-wall holds may give a 3D normal [nx, ny, nz]; on a roof, 'up' [ux, uy] is the direction of travel. view: optional {position, look_at} for the G key, like spawn. hidden: true leaves a problem out of the viewer unless the URL has ?all. style: optional per-limb technique for this move, carried forward while the limb stays on its hold: feet edge (default) | smear | drop-knee | heel | toe-hook | toe-press; hands grip (default, fingers follow the hold's facing) | palm | undercling | gaston.",
   "house_rules": "Arêtes, side walls and volumes are always in.",
   "problems": [
     {
       "id": "letting-go",
+      "hidden": true,
       "name": "Letting Go",
       "grade": "V3",
       "colour": "#3aa0ff",
@@ -223,6 +224,7 @@
     },
     {
       "id": "bridge-end",
+      "hidden": true,
       "name": "Bridge End",
       "grade": "V2",
       "colour": "#ff9f1c",
@@ -432,6 +434,7 @@
     },
     {
       "id": "arch-enemy",
+      "hidden": true,
       "name": "Arch Enemy",
       "grade": "V5",
       "colour": "#2fd07a",
@@ -686,6 +689,7 @@
     },
     {
       "id": "black-hole",
+      "hidden": true,
       "name": "Black Hole",
       "grade": "V8",
       "colour": "#ffd21f",
@@ -937,6 +941,7 @@
     },
     {
       "id": "the-plank",
+      "hidden": true,
       "name": "The Plank",
       "grade": "V6",
       "colour": "#b36bff",
@@ -1399,6 +1404,197 @@
           "RH": "T",
           "LF": null,
           "RF": "L2"
+        }
+      ]
+    },
+    {
+      "id": "tunnel-vision",
+      "name": "Tunnel Vision",
+      "grade": "V5",
+      "colour": "#b6f02a",
+      "wall": "W21",
+      "where": "W21 → bridge underside → W19 lip",
+      "style": ["roof", "toe hooks", "compression", "lip turn"],
+      "view": {"position": [3.4, 1.7, 7.4], "look_at": [6.2, 2.0, 6.3]},
+      "rules": "Sit start in the back of the tunnel (W21, under the bridge), hands on S1 and S2. Finish matched on T above the west lip. No dabs: the roof is only 2.4 m up, so if a foot touches the mat you're off. Keep the walk-under clear while someone is on it.",
+      "notes": "A diagonal line across the underside of the bridge, from the back of the tunnel to the west lip: lime holds that read at a glance from the walk-in side. It's a toe-hook problem: once the feet go up they never come down, and every foot is a toe hook, a toe press or a heel. Three ideas, one after another: (1) compression, getting tight in the break and the hand-foot match on the volume; (2) the puzzle, where the obvious left-foot toe hook barn-doors you and you have to switch feet into a scissor on the volume; (3) the lip turn, a heel hook and a mantle onto W19. The crux (move 11) is in the middle of the roof, low enough to land on your back on the mat, so spot it. Easier: add a foot jib 0.4 m behind V1 so the switch isn't needed. Harder: take off R3 and lock off on R2. UNCONFIRMED: the hold positions are suggestions, and it assumes the bridge's underside takes holds.",
+      "holds": [
+        {"id": "S1", "along_m": 0.85, "height_m": 0.95, "type": "crimp", "role": "start", "notes": "Incut rail. Start left hand."},
+        {"id": "S2", "along_m": 1.3, "height_m": 1.0, "type": "pinch", "role": "start", "notes": "Fat pinch. Start right hand."},
+        {"id": "F1", "along_m": 0.75, "height_m": 0.3, "type": "foot", "notes": "Foot chip."},
+        {"id": "F2", "along_m": 1.5, "height_m": 0.32, "type": "foot", "notes": "Foot chip."},
+        {"id": "B1", "along_m": 1.2, "height_m": 1.7, "type": "jug", "size_m": [0.15, 0.09, 0.08], "notes": "Positive slot: the first pull."},
+        {"id": "F3", "along_m": 0.8, "height_m": 1.05, "type": "foot", "notes": "Foot edge."},
+        {"id": "F4", "along_m": 1.45, "height_m": 1.1, "type": "foot", "notes": "Foot edge."},
+        {"id": "B2", "along_m": 0.9, "height_m": 2.25, "type": "jug", "size_m": [0.2, 0.08, 0.08], "notes": "Jug in the break where W21 meets the roof. Left hand, then left foot."},
+        {"id": "F5", "along_m": 1.45, "height_m": 2.0, "type": "foot", "notes": "High foot jib under the break."},
+        {"id": "R1", "at": [6.45, 5.7, 2.41], "normal": [0, 0, -1], "up": [-0.42, 0.91], "type": "jug", "size_m": [0.13, 0.14, 0.12], "notes": "The horn: a roof jug 0.6 m out, with a hooking lip on its back. Right hand, then a right toe hook."},
+        {"id": "V1", "at": [6.41, 6.23, 2.41], "normal": [0, 0, -1], "up": [-0.42, 0.91], "type": "volume", "size_m": [0.6, 0.5, 0.22], "notes": "The big roof volume, point toward W21. Left hand slaps its far edge; then both feet live on it (toe press on the near facet, toe hook over the far edge)."},
+        {"id": "R2", "at": [5.72, 6.41, 2.41], "normal": [0, 0, -1], "up": [-0.42, 0.91], "type": "pinch", "notes": "Long roof pinch, in line with the direction of travel."},
+        {"id": "R3", "at": [5.89, 6.87, 2.41], "normal": [0, 0, -1], "up": [-0.42, 0.91], "type": "crimp", "notes": "Incut roof crimp: the lock-off hold for the crux."},
+        {"id": "R4", "at": [5.6, 7.35, 2.41], "normal": [0, 0, -1], "up": [-0.42, 0.91], "type": "sloper", "grip": "pinch", "notes": "Slopey pinch 0.3 m in from the west lip. Crux catch."},
+        {"id": "L1", "at": [5.31, 6.85, 2.41], "normal": [-1, 0, -1], "type": "arete", "notes": "West lip of the bridge: right heel hooks over it here."},
+        {"id": "J1", "wall": "W19", "along_m": 1.65, "height_m": 2.72, "type": "jug", "size_m": [0.17, 0.1, 0.08], "notes": "Lip jug on W19, just round the edge."},
+        {"id": "J2", "wall": "W19", "along_m": 1.95, "height_m": 2.62, "type": "jug", "size_m": [0.15, 0.09, 0.08], "notes": "Second lip jug on W19, for the left hand."},
+        {"id": "T", "wall": "W19", "along_m": 1.45, "height_m": 3.35, "type": "jug", "role": "finish", "notes": "Finishing jug on W19. Match."}
+      ],
+      "moves": [
+        {
+          "text": "Sit start in the back of the tunnel: left hand on the S1 rail, right hand on the S2 pinch, feet on F1 and F2.",
+          "technique": ["sit start"],
+          "LH": "S1",
+          "RH": "S2",
+          "LF": "F1",
+          "RF": "F2",
+          "body": {"hips": [1.1, 0.4, 0.55], "lean": 10}
+        },
+        {
+          "text": "Pull on and take the B1 slot with your right hand.",
+          "technique": ["pull on"],
+          "LH": "S1",
+          "RH": "B1",
+          "LF": "F1",
+          "RF": "F2",
+          "body": {"hips": [1.05, 0.75, 0.42]}
+        },
+        {
+          "text": "Walk your feet up to F3 and F4, then left hand to the B2 jug in the break.",
+          "technique": ["high feet"],
+          "LH": "B2",
+          "RH": "B1",
+          "LF": "F3",
+          "RF": "F4",
+          "body": {"hips": [1.15, 1.25, 0.4]}
+        },
+        {
+          "text": "Right hand into the roof: the R1 horn. Your body tips back under the roof.",
+          "technique": ["roof"],
+          "LH": "B2",
+          "RH": "R1",
+          "LF": "F3",
+          "RF": "F4",
+          "body": {"hips": [1.2, 1.4, 0.45], "lean": 25}
+        },
+        {
+          "text": "Left hand out to the big volume and grab its far edge. You are now stretched between the wall and the roof.",
+          "technique": ["slap", "span"],
+          "LH": "V1",
+          "RH": "R1",
+          "LF": "F3",
+          "RF": "F4",
+          "body": {"hips": [1.15, 1.6, 0.55], "chest": [1.2, 2.0, 0.82]}
+        },
+        {
+          "text": "Feet up into the break: left toe on B2, right toe on F5. Get tight under the roof. From here on the feet never leave the roof (the mats are only 2.4 m below).",
+          "technique": ["compression", "high feet"],
+          "LH": "V1",
+          "RH": "R1",
+          "LF": "B2",
+          "RF": "F5",
+          "body": {"hips": [1.2, 1.75, 0.45], "chest": [1.3, 2.05, 0.8]}
+        },
+        {
+          "text": "Right hand out to the R2 pinch.",
+          "technique": ["pinch"],
+          "LH": "V1",
+          "RH": "R2",
+          "LF": "B2",
+          "RF": "F5",
+          "body": {"hips": [1.4, 1.85, 0.55], "chest": [1.6, 2.1, 0.92]}
+        },
+        {
+          "text": "First toe hook: right toe goes behind the R1 horn. Pull with it and the right hip comes up to the roof.",
+          "technique": ["toe hook"],
+          "LH": "V1",
+          "RH": "R2",
+          "LF": "B2",
+          "RF": "R1",
+          "style": {"RF": "toe-hook"},
+          "body": {"hips": [1.35, 1.9, 0.65], "chest": [1.6, 2.12, 1.0]}
+        },
+        {
+          "text": "Left toe up onto the volume, right under your left hand (a hand-foot match). You're bunched up in a ball under the roof.",
+          "technique": ["hand-foot match", "toe press", "compression"],
+          "LH": "V1",
+          "RH": "R2",
+          "LF": "V1",
+          "RF": "R1",
+          "style": {"LF": "toe-press"},
+          "body": {"hips": [1.45, 1.75, 0.85], "chest": [1.6, 2.1, 1.15]}
+        },
+        {
+          "text": "Left hand off the volume to the R3 crimp. Your left toe keeps pressing the volume.",
+          "technique": ["crimp"],
+          "LH": "R3",
+          "RH": "R2",
+          "LF": "V1",
+          "RF": "R1",
+          "body": {"hips": [1.5, 1.8, 1.0], "chest": [1.7, 2.15, 1.35]}
+        },
+        {
+          "text": "The puzzle: the obvious next move is right hand to R4, but with only the left toe on the volume you barn-door off to the left. Switch: right toe comes off the horn and hooks over the volume's far edge, beside your left toe. One foot pulls, one pushes (a scissor), and the barn door is gone.",
+          "technique": ["toe hook switch", "scissor", "problem solving"],
+          "LH": "R3",
+          "RH": "R2",
+          "LF": "V1",
+          "RF": "V1",
+          "style": {"LF": "toe-press", "RF": "toe-hook"},
+          "body": {"hips": [1.55, 1.85, 1.1], "chest": [1.8, 2.18, 1.45], "turn": 20}
+        },
+        {
+          "text": "Crux: curl both toes, lock off on R3 and reach your right hand long to the R4 sloper by the lip.",
+          "technique": ["lock-off", "core", "crux"],
+          "LH": "R3",
+          "RH": "R4",
+          "LF": "V1",
+          "RF": "V1",
+          "body": {"hips": [1.65, 1.95, 1.4], "chest": [1.95, 2.2, 1.78], "turn": 30}
+        },
+        {
+          "text": "Right heel hooks over the west lip at L1, next to your hands.",
+          "technique": ["heel hook"],
+          "LH": "R3",
+          "RH": "R4",
+          "LF": "V1",
+          "RF": "L1",
+          "style": {"RF": "heel"},
+          "body": {"hips": [1.85, 2.0, 1.55], "chest": [2.05, 2.2, 1.95], "turn": 40}
+        },
+        {
+          "text": "Right hand round the lip to the J1 jug on the face.",
+          "technique": ["lip"],
+          "LH": "R3",
+          "RH": "J1",
+          "LF": "V1",
+          "RF": "L1",
+          "body": {"hips": [1.95, 2.0, 1.65], "chest": [2.2, 2.22, 2.05], "turn": 40}
+        },
+        {
+          "text": "Left hand round the lip to the J2 jug. Both hands are on the face now, right heel still over the lip.",
+          "technique": ["lip"],
+          "LH": "J2",
+          "RH": "J1",
+          "LF": "V1",
+          "RF": "L1",
+          "body": {"hips": [2.3, 2.0, 1.85], "chest": [2.6, 2.35, 2.0], "turn": 35}
+        },
+        {
+          "text": "Let the left foot go, pull on the heel and press the lip until your chest is over it. Right hand up to the T jug.",
+          "technique": ["mantle", "heel hook", "rockover"],
+          "LH": "J2",
+          "RH": "T",
+          "LF": null,
+          "RF": "L1",
+          "body": {"hips": [2.6, 2.0, 1.9], "chest": [2.65, 2.47, 2.0], "turn": 30}
+        },
+        {
+          "text": "Match T.",
+          "technique": ["match"],
+          "LH": "T",
+          "RH": "T",
+          "LF": null,
+          "RF": "L1",
+          "body": {"hips": [2.65, 2.55, 2.15], "chest": [2.62, 3.0, 2.3], "turn": 20}
         }
       ]
     }
